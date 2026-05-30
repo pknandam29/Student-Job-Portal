@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit_mode %}Edit Job | {{ job.title }}{% else %}Post a New Job{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <h2 class="fw-bold mb-1">
+                {% if edit_mode %}
+                    <i class="bi bi-pencil-square text-primary me-2"></i> Edit Job Listing
+                {% else %}
+                    <i class="bi bi-plus-circle text-primary me-2"></i> Post a Job Opening
+                {% endif %}
+            </h2>
+            <p class="text-muted mb-4">
+                {% if edit_mode %}
+                    Edit details of your job post. Note that it will remain in <strong>Pending</strong> status until verified.
+                {% else %}
+                    Share details about the job vacancy. It will be posted for review and approved by administrators.
+                {% endif %}
+            </p>
+            
+            {% if edit_mode and job.status != 'Pending' %}
+                <div class="alert alert-danger py-2 small shadow-sm border-0 d-flex align-items-center mb-4">
+                    <i class="bi bi-exclamation-octagon-fill me-2 text-danger"></i>
+                    Only jobs in Pending status can be edited.
+                </div>
+            {% endif %}
+            
+            <form method="post" class="mt-2">
+                {% csrf_token %}
+                
+                <div class="row">
+                    {% for field in form %}
+                        <div class="col-md-{% if field.name == 'title' or field.name == 'company_name' or field.name == 'location' or field.name == 'salary' or field.name == 'application_deadline' or field.name == 'contact_email' %}6{% else %}12{% endif %}">
+                            <div class="form-group-custom">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ field.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted d-block mt-0.5">{{ field.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-flex justify-content-end gap-3 mt-4">
+                    {% if edit_mode %}
+                        <a href="{% url 'my_jobs' %}" class="btn btn-outline-secondary px-4 py-2.5 rounded-pill">Cancel</a>
+                    {% else %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4 py-2.5 rounded-pill">Cancel</a>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary-gradient px-4 py-2.5 rounded-pill" {% if edit_mode and job.status != 'Pending' %}disabled{% endif %}>
+                        {% if edit_mode %}
+                            <i class="bi bi-check-circle me-1"></i> Save Changes
+                        {% else %}
+                            <i class="bi bi-cloud-upload me-1"></i> Submit for Vetting
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

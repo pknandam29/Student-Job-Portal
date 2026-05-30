@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Apply | {{ job.title }} at {{ job.company_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <h2 class="fw-bold mb-1"><i class="bi bi-send-fill text-primary me-2"></i> Submit Application</h2>
+            <p class="text-muted mb-4">You are applying for the position of <strong>{{ job.title }}</strong> at <strong>{{ job.company_name }}</strong> ({{ job.location }}).</p>
+            
+            <div class="p-3 bg-light border rounded-3 mb-4 small text-muted">
+                <i class="bi bi-info-circle-fill me-1 text-primary"></i> Your registration details and email address ({{ user.email }}) will be shared automatically with the employer. Please verify your contact information before applying.
+            </div>
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group-custom">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ field.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted d-block mt-0.5">{{ field.help_text }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <div class="d-flex justify-content-end gap-3 mt-4">
+                    <a href="{% url 'job_detail' job.id %}" class="btn btn-outline-secondary px-4 py-2.5 rounded-pill">Cancel</a>
+                    <button type="submit" class="btn btn-primary-gradient px-4 py-2.5 rounded-pill">
+                        <i class="bi bi-send-fill me-1"></i> Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

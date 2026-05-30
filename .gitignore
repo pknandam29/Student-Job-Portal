@@ -8,3 +8,9 @@ coverage/
 !.env.example
 student-job-portal.zip
 
+# Django / Python
+__pycache__/
+*.pyc
+db.sqlite3
+media/
+staticfiles/

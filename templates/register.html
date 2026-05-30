@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Register Account | Student Job Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-7 col-lg-6">
+        <div class="card border-0 glass-card-static shadow-lg rounded-4 overflow-hidden">
+            <!-- Header Gradient -->
+            <div class="p-4 text-center text-white" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+                <i class="bi bi-person-plus-fill display-5 mb-2"></i>
+                <h2 class="fw-bold m-0">Student Registration</h2>
+                <p class="small text-white-50 m-0 mt-1">Create an account to explore approved jobs and apply.</p>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form method="post" action="{% url 'register' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small shadow-sm border-0">
+                            {{ form.non_field_errors|join:", " }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        {% for field in form %}
+                            <div class="col-md-{% if field.name == 'first_name' or field.name == 'last_name' %}6{% else %}12{% endif %}">
+                                <div class="form-group-custom">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ field.errors|join:", " }}
+                                        </div>
+                                    {% endif %}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block mt-0.5">{{ field.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Password Confirmation -->
+                    <div class="form-group-custom">
+                        <label for="id_confirm_password">Confirm Password</label>
+                        <input type="password" name="confirm_password" id="id_confirm_password" class="form-control" placeholder="Confirm Password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary-gradient w-100 py-3 rounded-pill fw-bold text-uppercase mt-4 shadow-sm">
+                        <i class="bi bi-person-plus-fill me-1"></i> Register Account
+                    </button>
+                </form>
+            </div>
+            
+            <div class="card-footer bg-light border-0 py-3 text-center">
+                <p class="small text-muted m-0">Already have an account? <a href="{% url 'login' %}" class="fw-bold text-primary text-decoration-none">Sign In Here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

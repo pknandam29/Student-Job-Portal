@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}About Us | Student Job Portal{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-5">
+    <div class="col-md-7">
+        <h1 class="display-5 fw-bold mb-3">About <span class="gradient-text">Student Job Portal</span></h1>
+        <p class="lead text-muted">A dedicated career placement and internship network built entirely on Django, designed to empower academic campuses and student bodies.</p>
+        <p class="text-muted">Our goal is to narrow the divide between employers and entry-level college students. We realize that traditional job boards can feel overwhelming and are often filled with requirements that students cannot meet. Student Job Portal provides a curated, vetted environment where students can secure roles aligned with their specific majors and graduation deadlines.</p>
+        <p class="text-muted">Every posting undergoes a comprehensive administrative check before becoming searchable. This vetting step ensures legitimacy and safeguards our student pool against fraudulent postings.</p>
+    </div>
+    <div class="col-md-5 d-none d-md-block text-center">
+        <i class="bi bi-rocket-takeoff display-1 text-primary" style="font-size: 8rem; opacity: 0.85;"></i>
+    </div>
+</div>
+
+<div class="row text-center mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="p-4 border rounded-4 bg-white shadow-sm h-100">
+            <i class="bi bi-shield-check text-success display-5 mb-2"></i>
+            <h4 class="fw-bold mt-2">Vetted Security</h4>
+            <p class="text-muted mb-0 small">Admin approvals keep spam out, protecting student credentials and offering secure, reliable listings.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="p-4 border rounded-4 bg-white shadow-sm h-100">
+            <i class="bi bi-lightning-charge text-warning display-5 mb-2"></i>
+            <h4 class="fw-bold mt-2">Instant Apply</h4>
+            <p class="text-muted mb-0 small">Students apply in one tap using stored resume assets and tailored cover letters.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="p-4 border rounded-4 bg-white shadow-sm h-100">
+            <i class="bi bi-bookmark-heart text-danger display-5 mb-2"></i>
+            <h4 class="fw-bold mt-2">Personalized Lists</h4>
+            <p class="text-muted mb-0 small">Keep track of interesting positions using custom bookmarks and follow application updates in real time.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

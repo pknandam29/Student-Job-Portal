@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Contact Support | Student Job Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <div class="row">
+                <!-- Contact info details sidebar -->
+                <div class="col-md-5 mb-4 mb-md-0 border-end pe-md-4">
+                    <h2 class="fw-bold mb-3">Get in <span class="gradient-text">Touch</span></h2>
+                    <p class="text-muted small">Have questions about job post approval, profiles, or admin features? Reach out directly using this form or help contacts below.</p>
+                    
+                    <div class="mt-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-geo-alt-fill text-danger fs-4 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-0">Our Campus Location</h6>
+                                <small class="text-muted">100 University Ave, Suite 300, Silicon Valley</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-telephone-fill text-primary fs-4 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-0">Phone Hotline</h6>
+                                <small class="text-muted">+1 (555) 019-2834 (Mon-Fri, 9am - 5pm PST)</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-envelope-fill text-success fs-4 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-0">Email Helpline</h6>
+                                <a href="mailto:support@jobportal.edu" class="small text-decoration-none text-success fw-medium">support@jobportal.edu</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact form column -->
+                <div class="col-md-7 ps-md-4">
+                    <h4 class="fw-bold mb-3">Send Support Request</h4>
+                    <form method="post" action="{% url 'contact' %}">
+                        {% csrf_token %}
+                        <div class="form-group-custom">
+                            <label for="name">Your Name</label>
+                            <input type="text" name="name" id="name" class="form-control" placeholder="Jane Doe" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label for="email">Email Address</label>
+                            <input type="email" name="email" id="email" class="form-control" placeholder="jane@example.com" required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label for="subject">Subject</label>
+                            <input type="text" name="subject" id="subject" class="form-control" placeholder="Vetting time status..." required>
+                        </div>
+                        <div class="form-group-custom">
+                            <label for="message">Message Description</label>
+                            <textarea name="message" id="message" rows="4" class="form-control" placeholder="Explain your inquiry in detail..." required></textarea>
+                        </div>
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary-gradient py-3 rounded-pill fw-bold text-uppercase shadow-sm">
+                                Send Message <i class="bi bi-send ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

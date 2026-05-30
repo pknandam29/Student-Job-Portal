@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Applications | {{ job.title }} at {{ job.company_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Back to Dashboard / Postings Navigation -->
+    <div class="col-12 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold m-0">Applicants for <span class="gradient-text">{{ job.title }}</span></h2>
+            <p class="text-muted mb-0">Moderated by {{ job.company_name }} | {{ job.location }}</p>
+        </div>
+        <div>
+            {% if user.is_staff %}
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Admin Dashboard
+                </a>
+            {% else %}
+                <a href="{% url 'my_jobs' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Back to My Jobs
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Applicants Table List -->
+    <div class="col-12">
+        {% if applications %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle custom-table">
+                    <thead>
+                        <tr>
+                            <th>Student Details</th>
+                            <th>Applied Date</th>
+                            <th>Vetted Resume</th>
+                            <th>Cover Letter Snippet</th>
+                            <th>Status Badge</th>
+                            <th>Action / Update Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ app.student.first_name }} {{ app.student.last_name }}</div>
+                                    <small class="text-primary d-block font-heading fw-medium">@{{ app.student.username }}</small>
+                                    <small class="text-muted d-block">{{ app.student.profile.college_name|default:"College not specified" }}</small>
+                                    <small class="text-muted d-block">{{ app.student.profile.course }} ({{ app.student.profile.graduation_year }})</small>
+                                    {% if app.student.profile.phone %}
+                                        <small class="text-muted d-block"><i class="bi bi-telephone-fill me-1"></i> {{ app.student.profile.phone }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ app.applied_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if app.resume %}
+                                        <a href="{{ app.resume.url }}" target="_blank" class="btn btn-sm btn-outline-primary px-3 rounded-pill">
+                                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> View Resume
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted small">No file</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <!-- Trigger Modal button for full Cover Letter -->
+                                    <button type="button" class="btn btn-sm btn-light border px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#coverLetterModal{{ app.id }}">
+                                        Read Cover Letter
+                                    </button>
+
+                                    <!-- Cover Letter Modal -->
+                                    <div class="modal fade" id="coverLetterModal{{ app.id }}" tabindex="-1" aria-labelledby="coverLetterModalLabel{{ app.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <div class="modal-header bg-light border-0">
+                                                    <h5 class="modal-title fw-bold" id="coverLetterModalLabel{{ app.id }}">Cover Letter: {{ app.student.username }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body p-4 text-start" style="white-space: pre-line; line-height: 1.6;">
+                                                    {{ app.cover_letter }}
+                                                </div>
+                                                <div class="modal-footer bg-light border-0">
+                                                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if app.status == 'Applied' %}
+                                        <span class="badge badge-pending">Applied</span>
+                                    {% elif app.status == 'Under Review' %}
+                                        <span class="badge badge-review">Under Review</span>
+                                    {% elif app.status == 'Selected' %}
+                                        <span class="badge badge-approved">Selected</span>
+                                    {% elif app.status == 'Rejected' %}
+                                        <span class="badge badge-rejected">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form action="{% url 'update_application_status' app.id %}" method="post" class="d-flex align-items-center gap-2">
+                                        {% csrf_token %}
+                                        <select name="status" class="form-select form-select-sm rounded-pill" style="min-width: 140px;">
+                                            {% for key, val in status_choices %}
+                                                <option value="{{ key }}" {% if app.status == key %}selected{% endif %}>{{ val }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary-gradient px-3 rounded-pill">
+                                            Update
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card border-0 shadow-sm p-5 text-center rounded-4 bg-white">
+                <div class="mb-3 text-muted">
+                    <i class="bi bi-send-x-fill display-1"></i>
+                </div>
+                <h4 class="fw-bold text-muted">No Applications Submitted</h4>
+                <p class="text-muted mb-0">No students have applied for this job listing yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

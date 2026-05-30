@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Login | Student Job Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-5">
+        <div class="card border-0 glass-card-static shadow-lg rounded-4 overflow-hidden">
+            <!-- Card Header Header Gradient -->
+            <div class="p-4 text-center text-white" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+                <i class="bi bi-rocket-takeoff-fill display-5 mb-2"></i>
+                <h2 class="fw-bold m-0">Welcome Back</h2>
+                <p class="small text-white-50 m-0 mt-1">Sign in to manage your career or post new jobs.</p>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="form-group-custom">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ field.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" class="btn btn-primary-gradient w-100 py-3 rounded-pill fw-bold text-uppercase mt-4 shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                    </button>
+                </form>
+            </div>
+            
+            <div class="card-footer bg-light border-0 py-3 text-center">
+                <p class="small text-muted m-0">Don't have an account? <a href="{% url 'register' %}" class="fw-bold text-primary text-decoration-none">Sign Up Now</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
