@@ -1,0 +1,6 @@
+{
+  "name": "Student Job Portal",
+  "description": "A comprehensive portal for students to find verified job opportunities with role-based access for Students, Job Posters, and Admins.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
