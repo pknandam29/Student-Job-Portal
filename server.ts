@@ -3,9 +3,16 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import dotenv from 'dotenv';
+
+// Load environment variables
+const envPath = fs.existsSync(path.join(process.cwd(), '.env.local')) 
+  ? path.join(process.cwd(), '.env.local') 
+  : path.join(process.cwd(), '.env');
+dotenv.config({ path: envPath });
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Set up server-side body parsers
 app.use(express.json({ limit: '10mb' }));
@@ -278,6 +285,10 @@ app.post('/api/auth/register', (req, res) => {
     return res.status(400).json({ error: 'Please populate all fields.' });
   }
 
+  if (role !== 'Student' && role !== 'Admin') {
+    return res.status(400).json({ error: 'Invalid user role requested.' });
+  }
+
   const db = readDb();
   const existing = db.users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
   if (existing) {
@@ -325,21 +336,23 @@ app.post('/api/auth/register', (req, res) => {
 
 // 4. Jobs Portal - GET Jobs (Filters based on role)
 app.get('/api/jobs', (req, res) => {
-  const { role, userId } = req.query;
+  const { role, userId, myPostings } = req.query;
   const db = readDb();
   
   // Rules:
-  // - Students only see APPROVED jobs.
-  // - Job Posters see all jobs they created.
   // - Admin sees ALL jobs.
+  // - If myPostings is true and userId is provided, return jobs created by that user.
+  // - Otherwise, return only APPROVED jobs.
   if (role === 'Admin') {
     return res.json(db.jobs);
-  } else if (role === 'Poster' && userId) {
-    const posterJobs = db.jobs.filter((j: any) => j.createdBy === userId);
-    return res.json(posterJobs);
+  } else if (myPostings === 'true' && userId) {
+    const userJobs = db.jobs.filter((j: any) => j.createdBy === userId);
+    return res.json(userJobs);
   } else {
-    // Student, guest, or unauthenticated -> only approved jobs
-    const approvedJobs = db.jobs.filter((j: any) => j.status === 'Approved');
+    // Student, guest, or unauthenticated -> only approved jobs, hide self-created ones
+    const approvedJobs = db.jobs.filter(
+      (j: any) => j.status === 'Approved' && (userId ? j.createdBy !== userId : true)
+    );
     return res.json(approvedJobs);
   }
 });
@@ -531,35 +544,38 @@ app.post('/api/applications', (req, res) => {
 
 // 12. Applications - GET (Students see theirs, recruiters/posters see theirs for owned jobs, admin sees all)
 app.get('/api/applications', (req, res) => {
-  const { role, userId } = req.query;
+  const { role, userId, asPoster } = req.query;
   const db = readDb();
 
-  if (role === 'Student') {
-    const studentApps = db.applications.filter((a: any) => a.studentId === userId);
-    // Enrich with Job details
-    const enriched = studentApps.map((app: any) => {
-      const job = db.jobs.find((j: any) => j.id === app.jobId);
-      return { ...app, job };
-    });
-    return res.json(enriched);
-  } else if (role === 'Poster') {
-    // Get jobs created by this poster
-    const posterJobs = db.jobs.filter((j: any) => j.createdBy === userId);
-    const posterJobIds = posterJobs.map((j: any) => j.id);
-
-    // Get applications to these jobs
-    const applications = db.applications.filter((a: any) => posterJobIds.includes(a.jobId));
-    const enriched = applications.map((app: any) => {
-      const job = db.jobs.find((j: any) => j.id === app.jobId);
-      return { ...app, job };
-    });
-    return res.json(enriched);
-  } else if (role === 'Admin') {
+  if (role === 'Admin') {
     const enriched = db.applications.map((app: any) => {
       const job = db.jobs.find((j: any) => j.id === app.jobId);
       return { ...app, job };
     });
     return res.json(enriched);
+  } else if (role === 'Student') {
+    if (asPoster === 'true') {
+      // Get jobs created by this user
+      const userJobs = db.jobs.filter((j: any) => j.createdBy === userId);
+      const userJobIds = userJobs.map((j: any) => j.id);
+
+      // Get applications to these jobs
+      const applications = db.applications.filter((a: any) => userJobIds.includes(a.jobId));
+      const enriched = applications.map((app: any) => {
+        const job = db.jobs.find((j: any) => j.id === app.jobId);
+        return { ...app, job };
+      });
+      return res.json(enriched);
+    } else {
+      // Applications sent by this student
+      const studentApps = db.applications.filter((a: any) => a.studentId === userId);
+      // Enrich with Job details
+      const enriched = studentApps.map((app: any) => {
+        const job = db.jobs.find((j: any) => j.id === app.jobId);
+        return { ...app, job };
+      });
+      return res.json(enriched);
+    }
   } else {
     res.json([]);
   }
@@ -674,6 +690,75 @@ app.post('/api/ai/resume-review', async (req, res) => {
     console.error('Error with Gemini AI Resume review:', err);
     res.status(500).json({
       error: err.message || 'Gemini review service temporarily unavailable. Confirm GEMINI_API_KEY settings.'
+    });
+  }
+});
+
+// 18. GEMINI AI: ATS SCORER & ANALYSIS
+app.post('/api/ai/ats-score', async (req, res) => {
+  const { resumeText, fileBase64, fileMimeType, targetJobTitle, targetJobDesc } = req.body;
+
+  if (!resumeText && !fileBase64) {
+    return res.status(400).json({ error: 'Please submit a resume text or file to scan.' });
+  }
+
+  try {
+    const ai = getGeminiClient();
+    const contents: any[] = [];
+
+    if (fileBase64 && fileMimeType) {
+      // Clean base64 prefix if present (e.g. data:application/pdf;base64,...)
+      const cleanedBase64 = fileBase64.includes(';base64,') 
+        ? fileBase64.split(';base64,')[1] 
+        : fileBase64;
+      contents.push({
+        inlineData: {
+          data: cleanedBase64,
+          mimeType: fileMimeType,
+        }
+      });
+    } else if (resumeText) {
+      contents.push({ text: resumeText });
+    }
+
+    const prompt = `
+      You are an expert Applicant Tracking System (ATS) matching algorithm and technical recruiter.
+      Analyze the candidate's resume (attached above) and compare it against the target position.
+      
+      TARGET POSITION DETAILS:
+      Role Title: ${targetJobTitle || 'Not specified'}
+      Description: ${targetJobDesc || 'Not specified'}
+
+      Determine a numeric ATS match score (integer from 0 to 100), identify which skills matched the target position, which expected skills were missing, and provide detailed, actionable feedback.
+      
+      Format the feedback using clear Markdown headers, bullet points, and code-like tags for skills. Be specific and encouraging.
+    `;
+    contents.push(prompt);
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: contents,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            atsScore: { type: 'INTEGER' },
+            matchedSkills: { type: 'ARRAY', items: { type: 'STRING' } },
+            missingSkills: { type: 'ARRAY', items: { type: 'STRING' } },
+            feedback: { type: 'STRING' },
+          },
+          required: ['atsScore', 'matchedSkills', 'missingSkills', 'feedback'],
+        },
+      },
+    });
+
+    const resultText = response.text || "{}";
+    res.json(JSON.parse(resultText));
+  } catch (err: any) {
+    console.error('Error with Gemini AI ATS Score:', err);
+    res.status(500).json({
+      error: err.message || 'Gemini ATS service temporarily unavailable. Confirm GEMINI_API_KEY settings.'
     });
   }
 });

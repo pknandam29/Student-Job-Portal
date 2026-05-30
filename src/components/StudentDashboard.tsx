@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Job, StudentProfile, Application, ChatMessage } from '../types';
 import AIResumeReview from './AIResumeReview';
+import PosterDashboard from './PosterDashboard';
 import { 
   Building, MapPin, DollarSign, Calendar, Search, Filter, 
   Send, Server, CheckCircle, FileText, AlertCircle, MessageSquare, 
@@ -56,7 +57,7 @@ interface StudentDashboardProps {
 }
 
 export default function StudentDashboard({ studentId, studentProfile, onRefreshProfile }: StudentDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'jobs' | 'applications' | 'ai-review'>('jobs');
+  const [activeTab, setActiveTab] = useState<'jobs' | 'applications' | 'ai-review' | 'postings'>('jobs');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
@@ -117,7 +118,7 @@ export default function StudentDashboard({ studentId, studentProfile, onRefreshP
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/jobs?role=Student');
+      const response = await fetch(`/api/jobs?role=Student&userId=${studentId}`);
       const data = await response.json();
       if (response.ok) {
         setJobs(data);
@@ -305,6 +306,15 @@ export default function StudentDashboard({ studentId, studentProfile, onRefreshP
         >
           <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
           <span>AI Resume Reviewer</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('postings')}
+          className={`pb-3 font-sans font-bold text-sm border-b-2 transition duration-200 cursor-pointer flex items-center space-x-1 ${
+            activeTab === 'postings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Building className="h-3.5 w-3.5 text-indigo-600" />
+          <span>My Posted Vacancies</span>
         </button>
       </div>
 
@@ -661,6 +671,11 @@ export default function StudentDashboard({ studentId, studentProfile, onRefreshP
           studentSkills={studentProfile?.skills || []}
           jobs={jobs}
         />
+      )}
+
+      {/* 4. Student Recruitment Outlet tab */}
+      {activeTab === 'postings' && (
+        <PosterDashboard posterId={studentId} />
       )}
 
       {/* DETAIL MODAL OVERLAY */}

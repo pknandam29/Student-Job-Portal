@@ -3,7 +3,6 @@ import { User, StudentProfile } from './types';
 import Navbar from './components/Navbar';
 import AuthScreens from './components/AuthScreens';
 import StudentDashboard from './components/StudentDashboard';
-import PosterDashboard from './components/PosterDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import StudentProfileModal from './components/StudentProfileModal';
 import { Shield, Sparkles, AlertCircle, FileText } from 'lucide-react';
@@ -75,14 +74,11 @@ export default function App() {
   };
 
   // Immediate Identity Swapping Sandbox
-  const handleActorSwap = async (targetRole: 'Student' | 'Poster' | 'Admin') => {
+  const handleActorSwap = async (targetRole: 'Student' | 'Admin') => {
     let email = 'student@college.edu';
     let password = 'student123';
 
-    if (targetRole === 'Poster') {
-      email = 'poster@company.com';
-      password = 'poster123';
-    } else if (targetRole === 'Admin') {
+    if (targetRole === 'Admin') {
       email = 'admin@portal.com';
       password = 'admin123';
     }
@@ -143,11 +139,6 @@ export default function App() {
                 studentId={currentUser.id} 
                 studentProfile={studentProfile} 
                 onRefreshProfile={fetchStudentProfile} 
-              />
-            )}
-            {currentUser.role === 'Poster' && (
-              <PosterDashboard 
-                posterId={currentUser.id} 
               />
             )}
             {currentUser.role === 'Admin' && (

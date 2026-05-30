@@ -64,7 +64,7 @@ export default function PosterDashboard({ posterId }: PosterDashboardProps) {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/jobs?role=Poster&userId=${posterId}`);
+      const response = await fetch(`/api/jobs?role=Student&userId=${posterId}&myPostings=true`);
       const data = await response.json();
       if (response.ok) {
         setJobs(data);
@@ -78,7 +78,7 @@ export default function PosterDashboard({ posterId }: PosterDashboardProps) {
 
   const fetchApplications = async () => {
     try {
-      const response = await fetch(`/api/applications?role=Poster&userId=${posterId}`);
+      const response = await fetch(`/api/applications?role=Student&userId=${posterId}&asPoster=true`);
       const data = await response.json();
       if (response.ok) {
         setApplications(data);
@@ -255,7 +255,7 @@ export default function PosterDashboard({ posterId }: PosterDashboardProps) {
           jobId: activeChatApp.jobId,
           applicationId: activeChatApp.id,
           senderId: posterId,
-          senderRole: 'Poster',
+          senderRole: 'Student',
           senderName: `${activeChatApp.job?.company || 'Recruiter'} Hiring Team`,
           message: newMsgText,
         }),

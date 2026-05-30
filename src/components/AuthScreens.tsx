@@ -192,15 +192,15 @@ export default function AuthScreens({ onLoginSuccess }: AuthScreensProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRole('Poster')}
+                  onClick={() => setRole('Admin')}
                   className={`py-2 px-3 border rounded-lg text-xs font-semibold flex items-center justify-center space-x-2 transition cursor-pointer ${
-                    role === 'Poster'
+                    role === 'Admin'
                       ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
                       : 'bg-slate-50 border-slate-250 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <Briefcase className="h-4 w-4" />
-                  <span>Job Poster</span>
+                  <Shield className="h-4 w-4" />
+                  <span>Administrator</span>
                 </button>
               </div>
             </div>
@@ -252,18 +252,12 @@ export default function AuthScreens({ onLoginSuccess }: AuthScreensProps) {
           <Shield className="h-3.5 w-3.5 text-indigo-600" />
           <span>Interactive Prototype Sandbox Accs</span>
         </h4>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => quickLogIn('student@college.edu', 'student123')}
             className="py-1.5 px-2 text-[10px] bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg transition font-mono font-bold cursor-pointer"
           >
             Student Account
-          </button>
-          <button
-            onClick={() => quickLogIn('poster@company.com', 'poster123')}
-            className="py-1.5 px-2 text-[10px] bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg transition font-mono font-bold cursor-pointer"
-          >
-            Job Poster Acc
           </button>
           <button
             onClick={() => quickLogIn('admin@portal.com', 'admin123')}

@@ -56,20 +56,7 @@ export default function Navbar({ currentUser, onLogout, onActorSwap, onOpenProfi
                       <UserIcon className="h-4 w-4 text-emerald-600" />
                       <div>
                         <p className="font-bold text-slate-900 text-xs">Alex Rivera (Student)</p>
-                        <p className="text-[10px] text-slate-500">Search jobs, apply & get AI review</p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onActorSwap('Poster');
-                        setShowSwapDropdown(false);
-                      }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-indigo-50/50 flex items-center space-x-2.5 transition text-sm text-slate-800 border-b border-slate-100/60"
-                    >
-                      <Briefcase className="h-4 w-4 text-amber-600" />
-                      <div>
-                        <p className="font-bold text-slate-900 text-xs">InnovateCorp (Recruiter)</p>
-                        <p className="text-[10px] text-slate-500">Create jobs & track status</p>
+                        <p className="text-[10px] text-slate-500">Search/post jobs, review applicants & ATS</p>
                       </div>
                     </button>
                     <button
