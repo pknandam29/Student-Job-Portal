@@ -11,7 +11,9 @@ from applications.models import Application
 
 # Public Pages
 def home(request):
-    featured_jobs = Job.objects.filter(status='Approved', application_deadline__gte=timezone.now().date()).order_by('-created_at')[:6]
+    featured_jobs = []
+    if request.user.is_authenticated:
+        featured_jobs = Job.objects.filter(status='Approved', application_deadline__gte=timezone.now().date()).order_by('-created_at')[:6]
     context = {
         'featured_jobs': featured_jobs,
     }
@@ -26,6 +28,7 @@ def contact(request):
         return redirect('contact')
     return render(request, 'contact.html')
 
+@login_required
 def job_list(request):
     # Retrieve all approved and non-expired jobs
     jobs = Job.objects.filter(status='Approved').order_by('-created_at')
@@ -58,6 +61,7 @@ def job_list(request):
     }
     return render(request, 'job_list.html', context)
 
+@login_required
 def job_detail(request, job_id):
     # Admins and authors can view jobs of any status; others can only view Approved
     job = get_object_or_404(Job, pk=job_id)
