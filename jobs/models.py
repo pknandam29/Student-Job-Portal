@@ -15,7 +15,7 @@ class Job(models.Model):
     description = models.TextField()
     skills_required = models.CharField(max_length=500, help_text="Comma-separated list of skills")
     application_deadline = models.DateField()
-    contact_email = models.EmailField()
+    contact_email = models.EmailField(blank=True, null=True)
     application_url = models.URLField(max_length=500, blank=True, null=True, help_text="Link to the external job application page")
     posted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs')
     created_at = models.DateTimeField(auto_now_add=True)
