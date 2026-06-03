@@ -1,31 +1,4 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "student_job_portal/wsgi.py",
-            "use": "@vercel/python",
-            "config": {
-                "runtime": "python3.12"
-            }
-        },
-        {
-            "src": "build_files.sh",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "staticfiles"
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/static/(.*)",
-            "dest": "/$1"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "student_job_portal/wsgi.py"
-        }
-    ],
     "regions": [
         "bom1"
     ]
