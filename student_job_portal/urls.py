@@ -22,9 +22,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin-panel/', admin.site.urls), # Renamed django default admin url slightly so we can map custom admin dashboards under admin/
-    path('acc/', include('accounts.urls')),
+    path('', include('accounts.urls')),
     path('', include('jobs.urls')),
-    path('apl/', include('applications.urls')),
+    path('', include('applications.urls')),
 ]
 
 if settings.DEBUG:
