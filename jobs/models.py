@@ -59,6 +59,13 @@ class Job(models.Model):
             except Exception:
                 pass
 
+    @property
+    def skills_list(self):
+        if not self.skills_required:
+            return []
+        return [skill.strip() for skill in self.skills_required.split(',') if skill.strip()]
+
     def __str__(self):
         return f"{self.title} at {self.company_name}"
+
 

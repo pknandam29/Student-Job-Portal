@@ -45,9 +45,15 @@
             <!-- Skills block -->
             <div class="border-top pt-4 mt-4">
                 <h5 class="fw-bold mb-2 text-dark">Skills Required</h5>
-                <span class="badge bg-light text-dark border px-3 py-2 fs-7 rounded mt-1">
-                    {{ job.skills_required }}
-                </span>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                    {% for skill in job.skills_list %}
+                        <span class="badge bg-light text-dark border px-3 py-2 fs-7 rounded-pill fw-medium">
+                            {{ skill }}
+                        </span>
+                    {% empty %}
+                        <span class="text-muted small">No specific skills listed</span>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
