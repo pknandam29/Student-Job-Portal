@@ -57,6 +57,40 @@
             {% endif %}
         </div>
 
+        <!-- Skill Tag Cloud -->
+        <div class="mb-4 bg-white p-3.5 rounded-4 shadow-sm border border-0">
+            <span class="text-muted d-block small mb-2 fw-semibold">
+                <i class="bi bi-tags-fill text-primary me-1"></i> Filter by Popular Technologies
+            </span>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                {% for p_skill in popular_skills %}
+                    {% if skill|lower == p_skill|lower %}
+                        <!-- Active Skill Tag -->
+                        <a href="?q={{ query }}&location={{ location }}&skill=" class="btn btn-sm btn-primary-gradient px-3 py-1.5 rounded-pill fs-7 fw-semibold shadow-sm d-flex align-items-center">
+                            {{ p_skill }} <i class="bi bi-x-circle-fill ms-1.5 small"></i>
+                        </a>
+                    {% else %}
+                        <!-- Inactive Skill Tag -->
+                        <a href="?q={{ query }}&location={{ location }}&skill={{ p_skill }}" class="btn btn-sm btn-outline-secondary px-3 py-1.5 rounded-pill fs-7 fw-medium text-dark border-light-subtle bg-light-subtle">
+                            {{ p_skill }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Display custom searched skill if not in popular list -->
+                {% if skill %}
+                    {% if skill not in popular_skills %}
+                        <a href="?q={{ query }}&location={{ location }}&skill=" class="btn btn-sm btn-primary-gradient px-3 py-1.5 rounded-pill fs-7 fw-semibold shadow-sm d-flex align-items-center">
+                            {{ skill }} <i class="bi bi-x-circle-fill ms-1.5 small"></i>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <small class="text-muted d-block mt-2 fs-7.5" style="font-size: 0.75rem;">
+                <i class="bi bi-info-circle me-1"></i> Don't see your skill? Use the <strong>Skill Keyword</strong> search in the sidebar.
+            </small>
+        </div>
+
         {% if jobs %}
             <div class="row">
                 {% for job in jobs %}
@@ -73,7 +107,12 @@
                                 </div>
                                 
                                 <h4 class="card-title fw-bold mb-1">{{ job.title }}</h4>
-                                <h6 class="text-primary fw-medium mb-3">{{ job.company_name }}</h6>
+                                <h6 class="text-primary fw-medium mb-3 d-flex align-items-center gap-1">
+                                    {{ job.company_name }}
+                                    {% if job.is_company_verified %}
+                                        <i class="bi bi-patch-check-fill text-primary" title="Verified Company" data-bs-toggle="tooltip"></i>
+                                    {% endif %}
+                                </h6>
                                 
                                 <p class="card-text text-muted mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                                     {{ job.description }}

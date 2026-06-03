@@ -65,6 +65,42 @@ class Job(models.Model):
             return []
         return [skill.strip() for skill in self.skills_required.split(',') if skill.strip()]
 
+    @property
+    def is_company_verified(self):
+        if not self.contact_email:
+            return False
+        
+        email_parts = self.contact_email.lower().split('@')
+        if len(email_parts) < 2:
+            return False
+            
+        domain = email_parts[1]
+        
+        # Exclude common public email providers
+        public_domains = {
+            'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 
+            'icloud.com', 'protonmail.com', 'zoho.com', 'yandex.com', 
+            'mail.com', 'live.com', 'aol.com', 'gmx.com'
+        }
+        if domain in public_domains:
+            return False
+            
+        # Clean company name
+        import re
+        company_clean = self.company_name.lower()
+        # Remove common business suffixes
+        suffixes = r'\b(inc|ltd|co|corp|corporation|llc|gmbh|pvt|private|limited)\b'
+        company_clean = re.sub(suffixes, '', company_clean)
+        # Keep only alphanumeric characters
+        company_clean = re.sub(r'[^a-z0-9]', '', company_clean)
+        
+        if not company_clean:
+            return False
+            
+        # Strip TLD and check if company name is in the domain
+        domain_name = domain.split('.')[0]
+        return company_clean in domain_name or domain_name in company_clean
+
     def __str__(self):
         return f"{self.title} at {self.company_name}"
 

@@ -65,11 +65,20 @@ def job_list(request):
     if skill:
         jobs = jobs.filter(skills_required__icontains=skill)
 
+    # Aggregate popular skills from all approved jobs
+    from collections import Counter
+    all_skills = []
+    for skill_str in Job.objects.filter(status='Approved').values_list('skills_required', flat=True):
+        if skill_str:
+            all_skills.extend([s.strip() for s in skill_str.split(',') if s.strip()])
+    popular_skills = [s for s, count in Counter(all_skills).most_common(8)]
+
     context = {
         'jobs': jobs,
         'query': query,
         'location': location,
         'skill': skill,
+        'popular_skills': popular_skills,
     }
     return render(request, 'job_list.html', context)
 
