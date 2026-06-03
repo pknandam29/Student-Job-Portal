@@ -49,12 +49,6 @@
                 <h2 class="fw-bold m-0">Career <span class="gradient-text">Opportunities</span></h2>
                 <small class="text-muted">Showing {{ jobs|length }} active postings</small>
             </div>
-            
-            {% if query or location or skill %}
-                <span class="badge bg-light text-primary border px-3 py-2 rounded-pill font-heading fw-bold">
-                    Filter active
-                </span>
-            {% endif %}
         </div>
 
         {% if jobs %}
