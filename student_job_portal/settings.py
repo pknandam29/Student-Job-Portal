@@ -11,9 +11,14 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +30,7 @@ SECRET_KEY = "django-insecure-0vsljr*j2un&_j-$2+ub)951h9dij%do@s14cic87c5$$)+=46
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -40,6 +45,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "jobs.apps.JobsConfig",
     "applications.apps.ApplicationsConfig",
+    
 ]
 
 MIDDLEWARE = [
@@ -76,11 +82,17 @@ WSGI_APPLICATION = "student_job_portal.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'neondb',
+        'USER': 'neondb_owner',
+        'PASSWORD': 'npg_cRkC2Xai5xMu',
+        'HOST': 'ep-wispy-sky-aoaufj1s-pooler.c-2.ap-southeast-1.aws.neon.tech',
+        'PORT': '5432',
     }
 }
+
 
 
 # Password validation
@@ -133,3 +145,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Email Configuration for Development (Prints to Console)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "support@jobportal.edu"
+
+# Gemini API Key configuration
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "MY_GEMINI_API_KEY")

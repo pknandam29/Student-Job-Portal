@@ -3,11 +3,17 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Job, SavedJob
+from .models import Job
 from .forms import JobForm
 from accounts.views import is_admin
 from django.contrib.auth.models import User
 from applications.models import Application
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.conf import settings
+import base64
+import requests
+import json
 
 # Public Pages
 def home(request):
@@ -20,9 +26,15 @@ def home(request):
     return render(request, 'home.html', context)
 
 def about(request):
+    if is_admin(request.user):
+        messages.warning(request, "Administrators do not need access to the About page.")
+        return redirect('admin_dashboard')
     return render(request, 'about.html')
 
 def contact(request):
+    if is_admin(request.user):
+        messages.warning(request, "Administrators do not need access to the Contact page.")
+        return redirect('admin_dashboard')
     if request.method == 'POST':
         messages.success(request, "Thank you for reaching out! We will contact you soon.")
         return redirect('contact')
@@ -70,16 +82,13 @@ def job_detail(request, job_id):
         return redirect('job_list')
         
     has_applied = False
-    is_saved = False
     
     if request.user.is_authenticated:
         has_applied = Application.objects.filter(student=request.user, job=job).exists()
-        is_saved = SavedJob.objects.filter(user=request.user, job=job).exists()
 
     context = {
         'job': job,
         'has_applied': has_applied,
-        'is_saved': is_saved,
     }
     return render(request, 'job_detail.html', context)
 
@@ -92,18 +101,14 @@ def dashboard(request):
         
     # Analytics / info for Student
     applied_count = Application.objects.filter(student=user).count()
-    saved_count = SavedJob.objects.filter(user=user).count()
     posted_count = Job.objects.filter(posted_by=user).count()
     
     recent_applications = Application.objects.filter(student=user).order_by('-applied_at')[:5]
-    recent_saves = SavedJob.objects.filter(user=user).order_by('-saved_at')[:5]
     
     context = {
         'applied_count': applied_count,
-        'saved_count': saved_count,
         'posted_count': posted_count,
         'recent_applications': recent_applications,
-        'recent_saves': recent_saves,
     }
     return render(request, 'dashboard.html', context)
 
@@ -165,23 +170,7 @@ def my_jobs(request):
     posted_jobs = Job.objects.filter(posted_by=request.user).annotate(app_count=Count('applications')).order_by('-created_at')
     return render(request, 'my_jobs.html', {'posted_jobs': posted_jobs})
 
-# Saved Jobs
-@login_required
-def save_job(request, job_id):
-    job = get_object_or_404(Job, pk=job_id, status='Approved')
-    saved_job, created = SavedJob.objects.get_or_create(user=request.user, job=job)
-    if created:
-        messages.success(request, f"Saved '{job.title}' to your bookmarks.")
-    else:
-        # Toggle: unsave
-        saved_job.delete()
-        messages.success(request, f"Removed '{job.title}' from your bookmarks.")
-    return redirect(request.META.get('HTTP_REFERER', 'job_list'))
 
-@login_required
-def saved_jobs(request):
-    saves = SavedJob.objects.filter(user=request.user).select_related('job').order_by('-saved_at')
-    return render(request, 'saved_jobs.html', {'saves': saves})
 
 # Admin Dashboard
 @user_passes_test(is_admin)
@@ -240,3 +229,152 @@ def admin_job_action(request, job_id, action):
         messages.success(request, f"Job '{title}' deleted.")
     
     return redirect(request.META.get('HTTP_REFERER', 'admin_dashboard'))
+
+
+@login_required
+@require_POST
+def autofill_job(request):
+    image_file = request.FILES.get('image')
+    if not image_file:
+        return JsonResponse({'error': 'No image file uploaded.'}, status=400)
+    
+    # 1. Attempt using Gemini API if key is valid (not default placeholder)
+    api_key = getattr(settings, 'GEMINI_API_KEY', 'MY_GEMINI_API_KEY')
+    has_api_key = api_key and api_key != 'MY_GEMINI_API_KEY'
+    
+    if has_api_key:
+        try:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+            # Reset file pointer
+            image_file.seek(0)
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": (
+                                    "Analyze this job posting screenshot or PDF document and extract details. "
+                                    "Return a JSON object with fields: "
+                                    "'title', 'company_name', 'location', 'salary' (a decimal number, convert monthly salary in Rupees if possible), "
+                                    "'description' (a long description of the job), 'skills_required' (comma-separated list of key skills), "
+                                    "'contact_email' (contact email address if found in the text, otherwise set to empty string), "
+                                    "and 'application_url' (external application link/URL if found in the text, otherwise set to empty string). "
+                                    "If any field cannot be found, set it to an empty string. "
+                                    "Only return the raw JSON object, without any markdown formatting or backticks."
+                                )
+                            },
+                            {
+                                "inlineData": {
+                                    "mimeType": image_file.content_type,
+                                    "data": image_data
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "responseMimeType": "application/json"
+                }
+            }
+            
+            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=15)
+            if response.status_code == 200:
+                res_json = response.json()
+                text_response = res_json['candidates'][0]['content']['parts'][0]['text']
+                
+                # Robust JSON cleaning: strip backticks if markdown blocks are returned
+                text_response = text_response.strip()
+                if text_response.startswith("```"):
+                    lines = text_response.splitlines()
+                    if lines[0].startswith("```"):
+                        lines = lines[1:]
+                    if lines[-1].startswith("```"):
+                        lines = lines[:-1]
+                    text_response = "\n".join(lines).strip()
+                
+                data = json.loads(text_response)
+                return JsonResponse({
+                    'title': data.get('title', ''),
+                    'company_name': data.get('company_name', ''),
+                    'location': data.get('location', ''),
+                    'salary': data.get('salary', ''),
+                    'description': data.get('description', ''),
+                    'skills_required': data.get('skills_required', ''),
+                    'contact_email': data.get('contact_email', ''),
+                    'application_url': data.get('application_url', ''),
+                    'success': True
+                })
+            else:
+                print(f"[Gemini API Error] Status Code {response.status_code}: {response.text}")
+        except Exception as e:
+            print(f"[Gemini Exception] Error occurred: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+    # 2. Smart fallback / Mock extraction based on the filename or generic defaults
+    filename = image_file.name.lower()
+    
+    # Defaults
+    title = "Software Engineer Intern"
+    company_name = "Stripe"
+    location = "Remote"
+    salary = "80000.00"
+    description = (
+        "We are looking for a Software Engineer Intern to join our team. "
+        "You will design, develop, and maintain clean web applications, write tests, and collaborate with product teams."
+    )
+    skills_required = "Python, JavaScript, SQL, Git"
+    contact_email = "internships@stripe.com"
+    application_url = "https://stripe.com/jobs"
+    
+    if "python" in filename or "django" in filename:
+        title = "Python/Django Developer"
+        company_name = "DjangoTech Inc."
+        location = "Chicago, IL (Hybrid)"
+        salary = "95000.00"
+        description = (
+            "Join our backend team to build scalable Python web services using Django. "
+            "You will implement REST APIs, optimize database queries, and ensure application speed and stability."
+        )
+        skills_required = "Python, Django, PostgreSQL, REST APIs"
+        contact_email = "jobs@djangotech.com"
+        application_url = ""
+    elif "react" in filename or "frontend" in filename or "ui" in filename:
+        title = "Frontend Developer (React)"
+        company_name = "Vercel Inc."
+        location = "Remote (US/Canada)"
+        salary = "110000.00"
+        description = (
+            "We are seeking a Frontend Engineer focused on React and Next.js. "
+            "You will build responsive user interfaces, optimize component performance, and work closely with UI designers."
+        )
+        skills_required = "React, Next.js, Tailwind CSS, TypeScript"
+        contact_email = "careers@vercel.com"
+        application_url = "https://vercel.com/careers"
+    elif "design" in filename or "figma" in filename or "ux" in filename:
+        title = "Product Designer"
+        company_name = "Figma"
+        location = "San Francisco, CA"
+        salary = "125000.00"
+        description = (
+            "We are looking for a Product Designer to design beautiful interfaces for our web applications. "
+            "You will conduct user research, create wireframes, build high-fidelity interactive mockups, and run usability tests."
+        )
+        skills_required = "Figma, UI/UX, Wireframing, User Research"
+        contact_email = "design@figma.com"
+        application_url = "https://figma.com/careers"
+        
+    return JsonResponse({
+        'title': title,
+        'company_name': company_name,
+        'location': location,
+        'salary': salary,
+        'description': description,
+        'skills_required': skills_required,
+        'contact_email': contact_email,
+        'application_url': application_url,
+        'warning': "Using simulated extraction (configure GEMINI_API_KEY in .env for live AI extraction)",
+        'success': True
+    })

@@ -27,6 +27,29 @@
                 </div>
             {% endif %}
             
+            {% if not edit_mode %}
+            <!-- AI Autofill Drag/Drop/Paste Zone -->
+            <div class="card border-dashed p-4 text-center rounded-4 mb-4 position-relative" id="autofill-dropzone" style="border: 2px dashed #cbd5e1; transition: all 0.2s ease-in-out; background-color: #f8fafc; cursor: pointer;">
+                <div class="d-flex flex-column align-items-center py-3">
+                    <i class="bi bi-file-earmark-image fs-1 text-primary mb-2"></i>
+                    <h5 class="fw-bold text-dark mb-1">Autofill with Screenshot or PDF</h5>
+                    <p class="text-muted small mb-3">Drag & drop a screenshot or PDF, click to browse, or paste directly with <strong>Ctrl + V</strong></p>
+                    <input type="file" id="autofill-file-input" class="d-none" accept="image/*,application/pdf">
+                    <button type="button" class="btn btn-sm btn-outline-primary px-3 rounded-pill" onclick="document.getElementById('autofill-file-input').click()">
+                        <i class="bi bi-upload me-1"></i> Choose Image or PDF
+                    </button>
+                </div>
+                
+                <!-- Loading State Overlay (hidden by default) -->
+                <div id="autofill-loader" class="d-none position-absolute top-0 start-0 w-100 h-100 rounded-4 d-flex flex-column align-items-center justify-content-center bg-white" style="opacity: 0.95; z-index: 10;">
+                    <div class="spinner-border text-primary mb-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="fw-semibold text-primary">AI is extracting job details...</span>
+                </div>
+            </div>
+            {% endif %}
+            
             <form method="post" class="mt-2">
                 {% csrf_token %}
                 
@@ -65,6 +88,195 @@
                 </div>
             </form>
         </div>
-    </div>
+     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not edit_mode %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropzone = document.getElementById('autofill-dropzone');
+        const fileInput = document.getElementById('autofill-file-input');
+        const loader = document.getElementById('autofill-loader');
+        
+        // Form fields to autofill
+        const fields = {
+            title: document.getElementById('id_title'),
+            company_name: document.getElementById('id_company_name'),
+            location: document.getElementById('id_location'),
+            salary: document.getElementById('id_salary'),
+            description: document.getElementById('id_description'),
+            skills_required: document.getElementById('id_skills_required'),
+            contact_email: document.getElementById('id_contact_email'),
+            application_url: document.getElementById('id_application_url')
+        };
+
+        // Click on dropzone triggers file dialog
+        dropzone.addEventListener('click', function (e) {
+            // Only trigger if click is directly on the dropzone, not buttons inside
+            if (e.target === dropzone || dropzone.contains(e.target) && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                fileInput.click();
+            }
+        });
+
+        // File selection handler
+        fileInput.addEventListener('change', function (e) {
+            if (this.files && this.files[0]) {
+                uploadImage(this.files[0]);
+            }
+        });
+
+        // Drag and drop handlers
+        dropzone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--primary)';
+            this.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+        });
+
+        dropzone.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            this.style.borderColor = '#cbd5e1';
+            this.style.backgroundColor = '#f8fafc';
+        });
+
+        dropzone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            this.style.borderColor = '#cbd5e1';
+            this.style.backgroundColor = '#f8fafc';
+            
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+                    uploadImage(file);
+                } else {
+                    showToast('Please upload an image or PDF file.', 'danger');
+                }
+            }
+        });
+
+        // Clipboard paste handler
+        window.addEventListener('paste', function (e) {
+            // Only capture paste if user is not actively typing inside form input fields that have content
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') && activeElement.value !== '') {
+                return;
+            }
+
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    const file = new File([blob], "pasted_screenshot.png", { type: blob.type });
+                    uploadImage(file);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        });
+
+        // Send AJAX request
+        function uploadImage(file) {
+            loader.classList.remove('d-none');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            // Get CSRF Token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('{% url "autofill_job" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                loader.classList.add('d-none');
+                if (data.success) {
+                    // Populate fields
+                    for (const key in fields) {
+                        if (fields[key] && data[key] !== undefined) {
+                            fields[key].value = data[key];
+                            // Flash animation
+                            fields[key].classList.add('autofill-flash');
+                            setTimeout(() => {
+                                fields[key].classList.remove('autofill-flash');
+                            }, 1500);
+                        }
+                    }
+                    
+                    if (data.warning) {
+                        showToast('Autofilled successfully! (Simulated Mode - add GEMINI_API_KEY in .env for live AI extraction)', 'warning');
+                    } else {
+                        showToast('AI Autofill completed successfully!', 'success');
+                    }
+                } else {
+                    showToast(data.error || 'Failed to extract job details.', 'danger');
+                }
+            })
+            .catch(error => {
+                loader.classList.add('d-none');
+                showToast('Error uploading image or connecting to AI backend.', 'danger');
+                console.error('Error:', error);
+            });
+        }
+
+        // Custom Toast Notification Creator
+        function showToast(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'success'} alert-dismissible fade show shadow-sm border-0 position-fixed top-0 start-50 translate-middle-x mt-3 d-flex align-items-center`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.minWidth = '320px';
+            
+            let icon = '<i class="bi bi-check-circle-fill me-2 fs-5"></i>';
+            if (type === 'danger') icon = '<i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>';
+            if (type === 'warning') icon = '<i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>';
+            
+            alertDiv.innerHTML = `
+                ${icon}
+                <div>${message}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alertDiv);
+                bsAlert.close();
+            }, 4500);
+        }
+    });
+</script>
+
+<style>
+    /* Autofill flashing border animation */
+    @keyframes flashBorder {
+        0% {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+        50% {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 0.35rem rgba(20, 184, 166, 0.3);
+            background-color: rgba(20, 184, 166, 0.05);
+        }
+        100% {
+            border-color: #dee2e6;
+            box-shadow: none;
+            background-color: #fff;
+        }
+    }
+    .autofill-flash {
+        animation: flashBorder 1.5s ease-out;
+    }
+</style>
+{% endif %}
 {% endblock %}

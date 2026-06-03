@@ -12,8 +12,7 @@ urlpatterns = [
     path('jobs/<int:job_id>/edit/', views.edit_job, name='edit_job'),
     path('jobs/<int:job_id>/delete/', views.delete_job, name='delete_job'),
     path('jobs/my/', views.my_jobs, name='my_jobs'),
-    path('jobs/<int:job_id>/save/', views.save_job, name='save_job'),
-    path('saved-jobs/', views.saved_jobs, name='saved_jobs'),
+    path('jobs/autofill/', views.autofill_job, name='autofill_job'),
     
     # Admin URLs
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),

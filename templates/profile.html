@@ -6,14 +6,19 @@
     <!-- Left Column - Profile Summary Card -->
     <div class="col-lg-4 mb-4">
         <div class="card border-0 glass-card shadow-sm text-center p-4">
-            <div class="position-relative d-inline-block mx-auto mb-3">
+            <div class="position-relative d-inline-block mx-auto mb-3 avatar-upload-trigger" id="avatar-upload-trigger" style="cursor: pointer;" title="Click to upload profile picture">
                 {% if user.profile.profile_picture %}
-                    <img src="{{ user.profile.profile_picture.url }}" alt="Profile" class="profile-pic-large border-3 border-primary">
+                    <img id="avatar-image-preview" src="{{ user.profile.profile_picture.url }}" alt="Profile" class="profile-pic-large border-3 border-primary" style="width: 120px; height: 120px; object-fit: cover;">
                 {% else %}
-                    <div class="bg-indigo-light rounded-circle d-flex align-items-center justify-content-center border-3 border-indigo" style="width: 120px; height: 120px; background-color: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                    <div id="avatar-placeholder" class="bg-indigo-light rounded-circle d-flex align-items-center justify-content-center border-3 border-indigo" style="width: 120px; height: 120px; background-color: rgba(99, 102, 241, 0.1); color: var(--primary);">
                         <i class="bi bi-person-fill display-3"></i>
                     </div>
+                    <img id="avatar-image-preview" src="" alt="Profile" class="profile-pic-large border-3 border-primary d-none" style="width: 120px; height: 120px; object-fit: cover;">
                 {% endif %}
+                <!-- Hover Overlay with Camera Icon -->
+                <div class="avatar-overlay position-absolute top-0 start-0 w-100 h-100 rounded-circle d-flex align-items-center justify-content-center" style="background-color: rgba(0, 0, 0, 0.45); opacity: 0; transition: opacity 0.2s ease-in-out;">
+                    <i class="bi bi-camera-fill text-white fs-3"></i>
+                </div>
             </div>
             
             <h3 class="fw-bold mb-1">{{ user.first_name }} {{ user.last_name }}</h3>
@@ -21,9 +26,11 @@
             
             <div class="border-top pt-3 text-start small">
                 <p class="mb-2"><strong class="text-dark">Email:</strong> <span class="text-muted float-end">{{ user.email }}</span></p>
+                {% if not user.is_staff and not user.is_superuser %}
                 <p class="mb-2"><strong class="text-dark">College:</strong> <span class="text-muted float-end">{{ user.profile.college_name|default:"Not specified" }}</span></p>
                 <p class="mb-2"><strong class="text-dark">Course:</strong> <span class="text-muted float-end">{{ user.profile.course|default:"Not specified" }}</span></p>
                 <p class="mb-0"><strong class="text-dark">Graduation:</strong> <span class="text-muted float-end">{{ user.profile.graduation_year|default:"Not specified" }}</span></p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -32,7 +39,11 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
             <h2 class="fw-bold mb-1"><i class="bi bi-person-gear text-primary me-2"></i> Update Profile Information</h2>
+            {% if not user.is_staff and not user.is_superuser %}
             <p class="text-muted mb-4">Edit your contact details and academic background below.</p>
+            {% else %}
+            <p class="text-muted mb-4">Edit your account credentials and contact details below.</p>
+            {% endif %}
             
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -54,20 +65,30 @@
                     {% endfor %}
                 </div>
                 
+                {% if not user.is_staff and not user.is_superuser %}
                 <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary mt-4"><i class="bi bi-mortarboard me-1"></i> Academic & Contact Info</h5>
+                {% else %}
+                <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary mt-4"><i class="bi bi-telephone-fill me-1"></i> Contact & Profile Info</h5>
+                {% endif %}
                 <div class="row">
                     {% for field in p_form %}
-                        <div class="col-md-{% if field.name == 'profile_picture' %}12{% else %}6{% endif %}">
-                            <div class="form-group-custom">
-                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% if field.name == 'profile_picture' %}
+                            <div class="d-none">
                                 {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ field.errors|join:", " }}
-                                    </div>
-                                {% endif %}
                             </div>
-                        </div>
+                        {% else %}
+                            <div class="col-md-6">
+                                <div class="form-group-custom">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ field.errors|join:", " }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
                 
@@ -81,4 +102,70 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const trigger = document.getElementById('avatar-upload-trigger');
+        const fileInput = document.getElementById('id_profile_picture');
+        const previewImage = document.getElementById('avatar-image-preview');
+        const placeholder = document.getElementById('avatar-placeholder');
+        
+        if (trigger && fileInput) {
+            // Trigger click on hidden input when clicking the avatar
+            trigger.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Handle file selection and update preview
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewImage.classList.remove('d-none');
+                        if (placeholder) {
+                            placeholder.classList.add('d-none');
+                        }
+                        
+                        // Show a subtle toast/alert to remind user to save changes
+                        showSaveReminder();
+                    };
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+        
+        function showSaveReminder() {
+            if (document.getElementById('save-profile-reminder')) return;
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'save-profile-reminder';
+            alertDiv.className = 'alert alert-info alert-dismissible fade show shadow-sm border-0 position-fixed top-0 start-50 translate-middle-x mt-3 d-flex align-items-center';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.minWidth = '320px';
+            
+            alertDiv.innerHTML = `
+                <i class="bi bi-info-circle-fill me-2 fs-5 text-info"></i>
+                <div>New profile picture loaded! Click <strong>Save Changes</strong> below to apply.</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alertDiv);
+                bsAlert.close();
+            }, 5000);
+        }
+    });
+</script>
+
+<style>
+    .avatar-upload-trigger:hover .avatar-overlay {
+        opacity: 1 !important;
+    }
+</style>
 {% endblock %}

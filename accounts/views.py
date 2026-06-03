@@ -51,9 +51,10 @@ def logout_view(request):
 
 @login_required
 def edit_profile(request):
+    user_is_admin = is_admin(request.user)
     if request.method == 'POST':
         u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile, is_admin=user_is_admin)
         if u_form.is_valid() and p_form.is_valid():
             u_form.save()
             p_form.save()
@@ -63,7 +64,7 @@ def edit_profile(request):
             messages.error(request, "Failed to update profile. Please check the form data.")
     else:
         u_form = UserUpdateForm(instance=request.user)
-        p_form = ProfileUpdateForm(instance=request.user.profile)
+        p_form = ProfileUpdateForm(instance=request.user.profile, is_admin=user_is_admin)
     
     return render(request, 'profile.html', {
         'u_form': u_form,

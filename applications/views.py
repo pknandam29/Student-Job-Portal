@@ -15,6 +15,11 @@ def apply_job(request, job_id):
         messages.error(request, "You cannot apply to a job you posted yourself.")
         return redirect('job_detail', job_id=job.id)
         
+    # Check if job requires external application
+    if job.application_url:
+        messages.info(request, "Redirecting to external application page.")
+        return redirect(job.application_url)
+        
     # Check if already applied
     if Application.objects.filter(student=request.user, job=job).exists():
         messages.warning(request, "You have already applied for this job.")
@@ -46,8 +51,8 @@ def my_applications(request):
 def job_applications(request, job_id):
     job = get_object_or_404(Job, pk=job_id)
     
-    # Only job poster or admins can view applications
-    if job.posted_by != request.user and not is_admin(request.user):
+    # Only admins can view applications
+    if not is_admin(request.user):
         messages.error(request, "You are not authorized to view applications for this job.")
         return redirect('dashboard')
         
@@ -64,8 +69,8 @@ def update_application_status(request, app_id):
     application = get_object_or_404(Application, pk=app_id)
     job = application.job
     
-    # Only job poster or admins can update status
-    if job.posted_by != request.user and not is_admin(request.user):
+    # Only admins can update status
+    if not is_admin(request.user):
         messages.error(request, "You are not authorized to perform this action.")
         return redirect('dashboard')
         

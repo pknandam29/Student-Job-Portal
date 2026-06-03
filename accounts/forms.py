@@ -52,3 +52,11 @@ class ProfileUpdateForm(forms.ModelForm):
             'graduation_year': forms.NumberInput(attrs={'class': 'form-control'}),
             'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        is_admin = kwargs.pop('is_admin', False)
+        super().__init__(*args, **kwargs)
+        if is_admin:
+            for field in ['college_name', 'course', 'graduation_year']:
+                if field in self.fields:
+                    del self.fields[field]

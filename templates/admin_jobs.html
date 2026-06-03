@@ -47,6 +47,13 @@
                             <tr>
                                 <td>
                                     <a href="{% url 'job_detail' job.id %}" class="fw-bold text-dark text-decoration-none">{{ job.title }}</a>
+                                    {% if job.application_url %}
+                                        <div class="mt-1">
+                                            <a href="{{ job.application_url }}" target="_blank" class="text-primary small text-decoration-none">
+                                                <i class="bi bi-link-45deg"></i> External Site
+                                            </a>
+                                        </div>
+                                    {% endif %}
                                 </td>
                                 <td>{{ job.company_name }}</td>
                                 <td>
