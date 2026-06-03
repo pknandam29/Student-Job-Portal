@@ -159,28 +159,24 @@
                         {% endif %}
                     </div>
                 
-                {% else %}
-                    <!-- Normal Student actions -->
-                    <div class="d-grid gap-2">
-                        {% if has_applied %}
-                            <button class="btn btn-secondary py-2.5 rounded-pill" disabled>
-                                <i class="bi bi-check2-all me-1"></i> Already Applied
-                            </button>
-                        {% else %}
-                            {% if job.application_url %}
-                                <a href="{{ job.application_url }}" target="_blank" class="btn btn-primary-gradient py-2.5 rounded-pill">
-                                    <i class="bi bi-box-arrow-up-right me-1"></i> Apply on External Site
-                                </a>
-                            {% else %}
-                                <a href="{% url 'apply_job' job.id %}" class="btn btn-primary-gradient py-2.5 rounded-pill">
-                                    <i class="bi bi-send-fill me-1"></i> Apply For Job
-                                </a>
-                            {% endif %}
-                        {% endif %}
-                        
-
-                    </div>
-                {% endif %}
+                 {% else %}
+                     <!-- Normal Student actions -->
+                     <div class="d-grid gap-2">
+                         {% if job.application_url %}
+                             <a href="{{ job.application_url }}" target="_blank" class="btn btn-primary-gradient py-2.5 rounded-pill">
+                                 <i class="bi bi-box-arrow-up-right me-1"></i> Apply on External Site
+                             </a>
+                         {% elif job.contact_email %}
+                             <a href="mailto:{{ job.contact_email }}?subject=Application for {{ job.title }} position" class="btn btn-primary-gradient py-2.5 rounded-pill">
+                                 <i class="bi bi-envelope-fill me-1"></i> Apply via Email
+                             </a>
+                         {% else %}
+                             <div class="alert alert-info text-center py-2 fs-7 mb-0 border-0 shadow-sm">
+                                 No application link or email provided.
+                             </div>
+                         {% endif %}
+                     </div>
+                 {% endif %}
                 
             {% else %}
                 <!-- Anonymous CTA -->
