@@ -81,27 +81,49 @@ WSGI_APPLICATION = "student_job_portal.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# DATABASES = {
+import dj_database_url
 
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'neondb',
-#         'USER': 'neondb_owner',
-#         'PASSWORD': 'npg_cRkC2Xai5xMu',
-#         'HOST': 'ep-wispy-sky-aoaufj1s-pooler.c-2.ap-southeast-1.aws.neon.tech',
-#         'PORT': '5432',
-#     }
-# }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+# Support connection string from Vercel/Neon integrations (DATABASE_URL or POSTGRES_URL)
+db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+
+if db_url:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=db_url,
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+else:
+    # Individual variables (check Vercel Neon default POSTGRES_* or DB_*)
+    db_name = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME")
+    db_user = os.getenv("POSTGRES_USER") or os.getenv("DB_USER")
+    db_password = os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD")
+    db_host = os.getenv("POSTGRES_HOST") or os.getenv("DB_HOST")
+    db_port = os.getenv("POSTGRES_PORT") or os.getenv("DB_PORT") or "5432"
+
+    if db_name and db_user and db_password and db_host:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": db_name,
+                "USER": db_user,
+                "PASSWORD": db_password,
+                "HOST": db_host,
+                "PORT": db_port,
+                "OPTIONS": {
+                    "sslmode": "require",
+                }
+            }
+        }
+    else:
+        # Fallback to local SQLite database if no PostgreSQL credentials are provided
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 
 
