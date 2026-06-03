@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "jobs.apps.JobsConfig",
     "applications.apps.ApplicationsConfig",
-    
+
 ]
 
 MIDDLEWARE = [
@@ -81,15 +81,25 @@ WSGI_APPLICATION = "student_job_portal.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
+# DATABASES = {
 
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'neondb',
+#         'USER': 'neondb_owner',
+#         'PASSWORD': 'npg_cRkC2Xai5xMu',
+#         'HOST': 'ep-wispy-sky-aoaufj1s-pooler.c-2.ap-southeast-1.aws.neon.tech',
+#         'PORT': '5432',
+#     }
+# }
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
-        'USER': 'neondb_owner',
-        'PASSWORD': 'npg_cRkC2Xai5xMu',
-        'HOST': 'ep-wispy-sky-aoaufj1s-pooler.c-2.ap-southeast-1.aws.neon.tech',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -128,6 +138,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
+
+
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
