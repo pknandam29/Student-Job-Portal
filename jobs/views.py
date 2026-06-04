@@ -274,7 +274,7 @@ def autofill_job(request):
                 }
             }
             
-            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=15)
+            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
             if response.status_code == 200:
                 res_json = response.json()
                 text_response = res_json['candidates'][0]['content']['parts'][0]['text']
