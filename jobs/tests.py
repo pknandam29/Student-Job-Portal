@@ -32,7 +32,7 @@ class JobPortalTests(TestCase):
             'contact_email': 'jobs@djangotech.com'
         }
         response = self.client.post(post_url, data=job_data)
-        self.assertEqual(response.status_code, 302) # Redirects to my_jobs
+        self.assertEqual(response.status_code, 302) # Redirects to dashboard
         
         job = Job.objects.get(title='Python Developer Intern')
         self.assertEqual(job.status, 'Pending')
@@ -61,7 +61,7 @@ class JobPortalTests(TestCase):
         self.client.login(username='employer1', password='password123')
         edit_url = reverse('edit_job', args=[job.id])
         response = self.client.post(edit_url, data=job_data)
-        # Should redirect back to my_jobs with an error message
+        # Should redirect back to dashboard with an error message
         self.assertEqual(response.status_code, 302)
         job.refresh_from_db()
         # Verify it wasn't mutated or remains Approved

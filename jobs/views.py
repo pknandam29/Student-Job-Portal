@@ -123,7 +123,7 @@ def post_job(request):
             job.status = 'Pending'  # Ensure it is pending for admin approval
             job.save()
             messages.success(request, "Job posted successfully! It will be visible once approved by an administrator.")
-            return redirect('my_jobs')
+            return redirect('dashboard')
         else:
             messages.error(request, "Failed to post job. Please check the details.")
     else:
@@ -137,14 +137,14 @@ def edit_job(request, job_id):
     # Check if job is still pending before permitting edit
     if job.status != 'Pending':
         messages.error(request, "You can only edit jobs that are in Pending status (prior to admin review).")
-        return redirect('my_jobs')
+        return redirect('dashboard')
         
     if request.method == 'POST':
         form = JobForm(request.POST, instance=job)
         if form.is_valid():
             form.save()
             messages.success(request, "Job updated successfully and remains in Pending status.")
-            return redirect('my_jobs')
+            return redirect('dashboard')
         else:
             messages.error(request, "Failed to update job.")
     else:
@@ -158,17 +158,11 @@ def delete_job(request, job_id):
     # Check status
     if job.status != 'Pending':
         messages.error(request, "You can only delete jobs that are in Pending status.")
-        return redirect('my_jobs')
+        return redirect('dashboard')
         
     job.delete()
     messages.success(request, "Job deleted successfully.")
-    return redirect('my_jobs')
-
-@login_required
-def my_jobs(request):
-    # Jobs posted by the user, annotated with application count
-    posted_jobs = Job.objects.filter(posted_by=request.user).annotate(app_count=Count('applications')).order_by('-created_at')
-    return render(request, 'my_jobs.html', {'posted_jobs': posted_jobs})
+    return redirect('dashboard')
 
 
 
