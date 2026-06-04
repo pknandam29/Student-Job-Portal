@@ -11,7 +11,7 @@ class Job(models.Model):
     title = models.CharField(max_length=255)
     company_name = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
-    salary = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monthly salary in Rupees (₹)")
+    salary = models.CharField(max_length=100, help_text="Annual salary (e.g., 12-22 LPA)")
     description = models.TextField()
     skills_required = models.CharField(max_length=500, help_text="Comma-separated list of skills")
     application_deadline = models.DateField()
@@ -44,7 +44,7 @@ class Job(models.Model):
                               f"Job Title: {self.title}\n" \
                               f"Company: {self.company_name}\n" \
                               f"Location: {self.location}\n" \
-                              f"Salary: ₹{self.salary}\n\n" \
+                              f"Salary: {self.salary}\n\n" \
                               f"Log in to view details and apply: http://127.0.0.1:8000/jobs/{self.id}/\n\n" \
                               f"Best regards,\nStudent Job Portal Team"
                     

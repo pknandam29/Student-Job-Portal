@@ -13,7 +13,7 @@ class JobForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Software Engineer...'}),
             'company_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Google, Stripe...'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Remote / New York, NY...'}),
-            'salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Salary in Rupees e.g., 50000'}),
+            'salary': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Annual salary e.g., 12-22 LPA'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Job description and requirements...'}),
             'skills_required': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Python, Django, SQL (comma-separated)'}),
             'application_deadline': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
