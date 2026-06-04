@@ -462,26 +462,26 @@ def ats_checker(request):
                     score = int(data.get('score', 75))
                 else:
                     print(f"[Gemini ATS Error] Status Code {response.status_code}: {response.text}")
-                    warning = f"API request failed (status {response.status_code}). Using simulated compatibility score."
+                    warning = f"API request failed with status {response.status_code} (Service Unavailable)."
             except Exception as e:
                 print(f"[Gemini ATS Exception] Error occurred: {str(e)}")
                 import traceback
                 traceback.print_exc()
-                warning = f"An error occurred during API call ({type(e).__name__}). Using simulated compatibility score."
+                warning = f"An error occurred during API call ({type(e).__name__})."
+        else:
+            warning = "Gemini API Key is not configured. Please add GEMINI_API_KEY to your .env file."
                 
         if score is None:
-            # Deterministic hash score based on size and name (range: 60-78)
-            import hashlib
-            hasher = hashlib.md5((resume_file.name + str(resume_file.size)).encode('utf-8'))
-            digest = hasher.hexdigest()
-            score = 60 + (int(digest[:4], 16) % 19)
-            if not warning:
-                warning = "Using simulated compatibility score (configure GEMINI_API_KEY in .env for live AI scoring)."
+            context = {
+                'error': warning or "An error occurred during resume analysis.",
+                'filename': resume_file.name,
+                'success': False
+            }
+            return render(request, 'ats_checker.html', context)
                 
         context = {
             'score': score,
             'filename': resume_file.name,
-            'warning': warning,
             'success': True
         }
         return render(request, 'ats_checker.html', context)

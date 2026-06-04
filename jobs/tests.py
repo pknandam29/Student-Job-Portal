@@ -189,5 +189,5 @@ class JobPortalTests(TestCase):
         resume_file = SimpleUploadedFile("my_resume.pdf", b"pdf_binary_content", content_type="application/pdf")
         response = self.client.post(ats_url, {'resume': resume_file})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Analysis")
-        self.assertContains(response, "my_resume.pdf")
+        self.assertContains(response, "Scan Failed")
+        self.assertContains(response, "Gemini API Key is not configured")
