@@ -31,15 +31,6 @@ def about(request):
         return redirect('admin_dashboard')
     return render(request, 'about.html')
 
-def contact(request):
-    if is_admin(request.user):
-        messages.warning(request, "Administrators do not need access to the Contact page.")
-        return redirect('admin_dashboard')
-    if request.method == 'POST':
-        messages.success(request, "Thank you for reaching out! We will contact you soon.")
-        return redirect('contact')
-    return render(request, 'contact.html')
-
 @login_required
 def job_list(request):
     # Retrieve all approved and non-expired jobs

@@ -101,25 +101,18 @@ class JobPortalTests(TestCase):
         app.refresh_from_db()
         self.assertEqual(app.status, 'Under Review')
 
-    def test_about_and_contact_access(self):
-        # 1. Anonymous user can access About and Contact
+    def test_about_access(self):
+        # 1. Anonymous user can access About
         self.client.logout()
         about_url = reverse('about')
-        contact_url = reverse('contact')
         
         response = self.client.get(about_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "About Us")
         
-        response = self.client.get(contact_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Contact Support")
-        
-        # 2. Student user can access About and Contact
+        # 2. Student user can access About
         self.client.login(username='student1', password='password123')
         response = self.client.get(about_url)
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(contact_url)
         self.assertEqual(response.status_code, 200)
         
         # 3. Admin user is redirected to admin dashboard
@@ -127,10 +120,6 @@ class JobPortalTests(TestCase):
         self.client.login(username='admin1', password='password123')
         
         response = self.client.get(about_url)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith(reverse('admin_dashboard')))
-        
-        response = self.client.get(contact_url)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('admin_dashboard')))
 
