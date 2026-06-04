@@ -164,31 +164,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer-custom">
-        <div class="container text-center text-md-start">
-            <div class="row">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <h5 class="text-white text-uppercase font-heading mb-2">Student Job Portal</h5>
-                    <p class="small text-muted mb-0">Connecting students with amazing career opportunities and simplifying job application management.</p>
-                </div>
-                <div class="col-md-3 mb-3 mb-md-0">
-                    <h5 class="text-white text-uppercase font-heading mb-2">Quick Links</h5>
-                    <ul class="list-unstyled mb-0 small">
-                        <li><a href="{% url 'home' %}" class="text-muted">Home</a></li>
-                        {% if not user.is_staff and not user.is_superuser %}
-                        <li><a href="{% url 'about' %}" class="text-muted">About Us</a></li>
-                        {% endif %}
-                        <li><a href="{% url 'job_list' %}" class="text-muted">Explore Careers</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <h5 class="text-white text-uppercase font-heading mb-2">Support</h5>
-                    <p class="small text-muted mb-1"><i class="bi bi-envelope-fill me-2 text-white"></i> support@jobportal.edu</p>
-                    <p class="small text-muted"><i class="bi bi-telephone-fill me-2 text-white"></i> +1 (555) 019-2834</p>
-                </div>
-            </div>
-            <hr class="border-secondary my-4">
-            <div class="text-center small text-muted">
+    <footer class="footer-custom py-4">
+        <div class="container text-center">
+            <div class="small text-muted">
                 &copy; 2026 Student Job Portal. Developed with Django and Bootstrap 5. All Rights Reserved.
             </div>
         </div>
