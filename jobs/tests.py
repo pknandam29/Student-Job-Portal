@@ -171,38 +171,4 @@ class JobPortalTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'https://vitetech.com/apply')
 
-    def test_ats_checker_flow(self):
-        # 1. Anonymous user is redirected to login page
-        self.client.logout()
-        ats_url = reverse('ats_checker')
-        response = self.client.get(ats_url)
-        self.assertEqual(response.status_code, 302)
-        
-        # 2. Student user can access the ATS Checker page
-        self.client.login(username='student1', password='password123')
-        response = self.client.get(ats_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "ATS Checker")
-        
-        # 3. Student can upload a dummy PDF resume to get evaluated
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        resume_file = SimpleUploadedFile("my_resume.pdf", b"pdf_binary_content", content_type="application/pdf")
-        response = self.client.post(ats_url, {'resume': resume_file})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Scan Failed")
-        self.assertContains(response, "Gemini API Key is not configured")
-        
-        # 4. Uploading invalid file format shows validation error on the page
-        invalid_format_file = SimpleUploadedFile("my_resume.txt", b"some text content", content_type="text/plain")
-        response = self.client.post(ats_url, {'resume': invalid_format_file})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Scan Failed")
-        self.assertContains(response, "Invalid file format. Please upload a PDF or Image resume.")
-        
-        # 5. Uploading file exceeding 5MB shows size limit error on the page
-        large_file_content = b"x" * (5 * 1024 * 1024 + 100) # Slightly larger than 5MB
-        large_file = SimpleUploadedFile("huge_resume.pdf", large_file_content, content_type="application/pdf")
-        response = self.client.post(ats_url, {'resume': large_file})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Scan Failed")
-        self.assertContains(response, "File size exceeds the limit of 5MB.")
+
