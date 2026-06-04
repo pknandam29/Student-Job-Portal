@@ -419,9 +419,16 @@ def ats_checker(request):
                             "parts": [
                                 {
                                     "text": (
-                                        "Analyze this resume and evaluate its ATS (Applicant Tracking System) compatibility. "
-                                        "Return ONLY a JSON object containing a single integer field: 'score' (representing a score from 0 to 100 based on formatting, structure, and parsing compatibility). "
-                                        "Do not include any formatting, backticks, or other text outside of the raw JSON object."
+                                        "You are a strict Applicant Tracking System (ATS) resume scanner. "
+                                        "Your task is to analyze the provided resume and return a highly accurate, realistic, and strict ATS compatibility score out of 100.\n\n"
+                                        "Evaluate based on the following strict rubric:\n"
+                                        "1. Formatting & Parseability (30 pts): Check for clean layouts. Deduct points for columns, tables, graphics, charts, non-standard bullet symbols, or text boxes that confuse parsers.\n"
+                                        "2. Quantifiable Impact & Metrics (30 pts): Look for numbers, percentages, statistics, or measurable results in the experience sections. Deduct points heavily if experience descriptions only list responsibilities without quantifiable outcomes.\n"
+                                        "3. Structure & Readability (20 pts): Ensure standard sections (Summary, Skills, Experience, Education, Projects) are present with clear timelines/dates.\n"
+                                        "4. Skills & Hard Keywords (20 pts): Match against standard industry skills. Soft skills should not be overemphasized.\n\n"
+                                        "Be extremely objective and critical. A standard clean resume with responsibilities but no metrics should score around 60-70. Only outstanding resumes with rich numerical metrics and clean layout should score 85+.\n\n"
+                                        "Return ONLY a JSON object containing a single integer field: 'score' (calculated from 0 to 100). "
+                                        "Do not include any markdown, formatting, backticks, or text outside of the raw JSON object."
                                     )
                                 },
                                 {
@@ -459,11 +466,11 @@ def ats_checker(request):
                 warning = "An error occurred during API call. Using simulated compatibility score."
                 
         if score is None:
-            # Deterministic hash score based on size and name
+            # Deterministic hash score based on size and name (range: 60-78)
             import hashlib
             hasher = hashlib.md5((resume_file.name + str(resume_file.size)).encode('utf-8'))
             digest = hasher.hexdigest()
-            score = 65 + (int(digest[:4], 16) % 28)
+            score = 60 + (int(digest[:4], 16) % 19)
             if not warning:
                 warning = "Using simulated compatibility score (configure GEMINI_API_KEY in .env for live AI scoring)."
                 
