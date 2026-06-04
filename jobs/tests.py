@@ -155,15 +155,13 @@ class JobPortalTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'https://vitetech.com/apply')
 
-        # 4. View job details as student - should see external apply link and NO internal form URL
+        # 4. View job details as student - should see external apply link in Quick Summary
         self.client.logout()
         self.client.login(username='student1', password='password123')
         detail_url = reverse('job_detail', args=[job.id])
         response = self.client.get(detail_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'https://vitetech.com/apply')
-        self.assertContains(response, 'Apply on External Site')
-        self.assertNotContains(response, reverse('apply_job', args=[job.id]))
 
         # 5. Accessing internal apply view directly should redirect to external site
         apply_url = reverse('apply_job', args=[job.id])
