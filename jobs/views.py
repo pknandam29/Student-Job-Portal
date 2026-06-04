@@ -461,9 +461,13 @@ def ats_checker(request):
                     data = json.loads(text_response)
                     score = int(data.get('score', 75))
                 else:
-                    warning = "API request failed. Using simulated compatibility score."
-            except Exception:
-                warning = "An error occurred during API call. Using simulated compatibility score."
+                    print(f"[Gemini ATS Error] Status Code {response.status_code}: {response.text}")
+                    warning = f"API request failed (status {response.status_code}). Using simulated compatibility score."
+            except Exception as e:
+                print(f"[Gemini ATS Exception] Error occurred: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                warning = f"An error occurred during API call ({type(e).__name__}). Using simulated compatibility score."
                 
         if score is None:
             # Deterministic hash score based on size and name (range: 60-78)
