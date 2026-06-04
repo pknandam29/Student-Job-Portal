@@ -11,6 +11,7 @@ urlpatterns = [
     path('jobs/<int:job_id>/edit/', views.edit_job, name='edit_job'),
     path('jobs/<int:job_id>/delete/', views.delete_job, name='delete_job'),
     path('jobs/autofill/', views.autofill_job, name='autofill_job'),
+    path('ats-checker/', views.ats_checker, name='ats_checker'),
     
     # Admin URLs
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),

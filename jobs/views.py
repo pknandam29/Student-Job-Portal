@@ -373,3 +373,106 @@ def autofill_job(request):
         'warning': "Using simulated extraction (configure GEMINI_API_KEY in .env for live AI extraction)",
         'success': True
     })
+
+@login_required
+def ats_checker(request):
+    score = None
+    warning = None
+    if request.method == 'POST':
+        resume_file = request.FILES.get('resume')
+        if not resume_file:
+            messages.error(request, "No resume file uploaded.")
+            return redirect('ats_checker')
+            
+        # Check MIME type or file extension (PDF or Image)
+        content_type = resume_file.content_type
+        ext = resume_file.name.lower().split('.')[-1]
+        
+        valid_mime = content_type in ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg']
+        valid_ext = ext in ['pdf', 'png', 'jpg', 'jpeg']
+        
+        if not (valid_mime or valid_ext):
+            messages.error(request, "Invalid file format. Please upload a PDF or Image resume.")
+            return redirect('ats_checker')
+            
+        api_key = getattr(settings, 'GEMINI_API_KEY', 'MY_GEMINI_API_KEY')
+        has_api_key = api_key and api_key != 'MY_GEMINI_API_KEY'
+        
+        if has_api_key:
+            try:
+                # Encode file to base64
+                file_data = base64.b64encode(resume_file.read()).decode('utf-8')
+                
+                # Determine mime type
+                mime_type = content_type
+                if ext == 'pdf':
+                    mime_type = 'application/pdf'
+                elif ext in ['jpg', 'jpeg']:
+                    mime_type = 'image/jpeg'
+                elif ext == 'png':
+                    mime_type = 'image/png'
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {
+                                    "text": (
+                                        "Analyze this resume and evaluate its ATS (Applicant Tracking System) compatibility. "
+                                        "Return ONLY a JSON object containing a single integer field: 'score' (representing a score from 0 to 100 based on formatting, structure, and parsing compatibility). "
+                                        "Do not include any formatting, backticks, or other text outside of the raw JSON object."
+                                    )
+                                },
+                                {
+                                    "inlineData": {
+                                        "mimeType": mime_type,
+                                        "data": file_data
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "generationConfig": {
+                        "responseMimeType": "application/json"
+                    }
+                }
+                
+                response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=15)
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text_response = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
+                    
+                    if text_response.startswith("```"):
+                        lines = text_response.splitlines()
+                        if lines[0].startswith("```"):
+                            lines = lines[1:]
+                        if lines[-1].startswith("```"):
+                            lines = lines[:-1]
+                        text_response = "\n".join(lines).strip()
+                        
+                    data = json.loads(text_response)
+                    score = int(data.get('score', 75))
+                else:
+                    warning = "API request failed. Using simulated compatibility score."
+            except Exception:
+                warning = "An error occurred during API call. Using simulated compatibility score."
+                
+        if score is None:
+            # Deterministic hash score based on size and name
+            import hashlib
+            hasher = hashlib.md5((resume_file.name + str(resume_file.size)).encode('utf-8'))
+            digest = hasher.hexdigest()
+            score = 65 + (int(digest[:4], 16) % 28)
+            if not warning:
+                warning = "Using simulated compatibility score (configure GEMINI_API_KEY in .env for live AI scoring)."
+                
+        context = {
+            'score': score,
+            'filename': resume_file.name,
+            'warning': warning,
+            'success': True
+        }
+        return render(request, 'ats_checker.html', context)
+        
+    return render(request, 'ats_checker.html')

@@ -170,3 +170,24 @@ class JobPortalTests(TestCase):
         response = self.client.get(apply_url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'https://vitetech.com/apply')
+
+    def test_ats_checker_flow(self):
+        # 1. Anonymous user is redirected to login page
+        self.client.logout()
+        ats_url = reverse('ats_checker')
+        response = self.client.get(ats_url)
+        self.assertEqual(response.status_code, 302)
+        
+        # 2. Student user can access the ATS Checker page
+        self.client.login(username='student1', password='password123')
+        response = self.client.get(ats_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ATS Checker")
+        
+        # 3. Student can upload a dummy PDF resume to get evaluated
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        resume_file = SimpleUploadedFile("my_resume.pdf", b"pdf_binary_content", content_type="application/pdf")
+        response = self.client.post(ats_url, {'resume': resume_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Analysis")
+        self.assertContains(response, "my_resume.pdf")

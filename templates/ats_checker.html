@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% block title %}Resume ATS Checker | Student Job Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Score Circle Gauge */
+    .score-container {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 2rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .score-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, white 82%, transparent 83% 100%),
+                    conic-gradient({% if score >= 80 %}#10b981{% elif score >= 50 %}#f59e0b{% else %}#ef4444{% endif %} calc({{ score }} * 1%), #e2e8f0 0);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05), var(--shadow-md);
+        transition: transform 0.5s ease-out;
+    }
+    
+    .score-text {
+        position: relative;
+        font-family: var(--font-heading);
+        text-align: center;
+        z-index: 10;
+    }
+    
+    .score-number {
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+        color: {% if score >= 80 %}#049669{% elif score >= 50 %}#d97706{% else %}#dc2626{% endif %};
+    }
+    
+    .score-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--gray-600);
+        margin-top: 0.25rem;
+    }
+    
+    /* Drag & Drop Zone */
+    .upload-zone {
+        border: 2px dashed var(--gray-300);
+        border-radius: var(--radius-lg);
+        padding: 3rem 2rem;
+        text-align: center;
+        background-color: var(--gray-50);
+        cursor: pointer;
+        transition: var(--transition-base);
+    }
+    
+    .upload-zone:hover, .upload-zone.dragover {
+        border-color: var(--primary);
+        background-color: rgba(99, 102, 241, 0.03);
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+    }
+    
+    /* Pulse Loading Overlay */
+    .ats-loading-overlay {
+        display: none;
+    }
+    .ats-loading-overlay.active {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.95);
+        z-index: 100;
+        border-radius: var(--radius-lg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8 col-md-10">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white position-relative" id="ats-card">
+            
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" class="ats-loading-overlay">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="fw-bold text-primary mb-1">Scanning Resume...</h4>
+                <p class="text-muted small">Gemini is analyzing structure, keywords, and formatting</p>
+            </div>
+
+            {% if success %}
+                <!-- Results View -->
+                <div class="text-center">
+                    <h2 class="fw-bold mb-1">Analysis <span class="gradient-text">Complete</span></h2>
+                    <p class="text-muted small mb-4">Resume: <strong>{{ filename }}</strong></p>
+                    
+                    {% if warning %}
+                        <div class="alert alert-info py-2 fs-7 mb-4 border-0 shadow-sm text-start mx-auto" style="max-width: 500px;">
+                            <i class="bi bi-info-circle-fill me-2 text-info"></i>{{ warning }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Score Radial Gauge -->
+                    <div class="score-container">
+                        <div class="score-ring"></div>
+                        <div class="score-text">
+                            <div class="score-number">{{ score }}</div>
+                            <div class="score-label">ATS Score</div>
+                        </div>
+                    </div>
+
+                    <!-- Verdict Block -->
+                    <div class="mt-4 mb-5">
+                        {% if score >= 80 %}
+                            <h4 class="fw-bold text-success"><i class="bi bi-patch-check-fill me-1"></i> Excellent Compatibility</h4>
+                            <p class="text-muted mx-auto small" style="max-width: 500px;">
+                                Your resume is highly ATS-friendly! It features clear headings, clean section layouts, and readable parsing elements suitable for modern Applicant Tracking Systems.
+                            </p>
+                        {% elif score >= 50 %}
+                            <h4 class="fw-bold text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i> Moderate Compatibility</h4>
+                            <p class="text-muted mx-auto small" style="max-width: 500px;">
+                                Your resume has decent readability but could be improved. Consider refining section headings, avoiding multi-column tables, or including more clear industry-specific keywords.
+                            </p>
+                        {% else %}
+                            <h4 class="fw-bold text-danger"><i class="bi bi-exclamation-octagon-fill me-1"></i> Weak Compatibility</h4>
+                            <p class="text-muted mx-auto small" style="max-width: 500px;">
+                                Your resume formatting might cause parsing issues in standard ATS systems. We recommend simplifying the layout, removing graphical sidebars or charts, and using clean bullet points.
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Retries button -->
+                    <div class="d-grid gap-2 col-md-6 mx-auto">
+                        <a href="{% url 'ats_checker' %}" class="btn btn-primary-gradient py-2.5 rounded-pill">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Scan Another Resume
+                        </a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary py-2.5 rounded-pill">
+                            <i class="bi bi-grid-fill me-1"></i> Return to Dashboard
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Upload form View -->
+                <div>
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold mb-2">Resume <span class="gradient-text">ATS Checker</span></h2>
+                        <p class="text-muted">Upload your resume to check its parsing compatibility with Applicant Tracking Systems (ATS) instantly.</p>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="ats-form">
+                        {% csrf_token %}
+                        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('resume-input').click()">
+                            <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
+                            <h5 class="fw-bold mb-1">Drag & Drop Resume Here</h5>
+                            <p class="text-muted small mb-3">Supports PDF and standard Image formats (.png, .jpg)</p>
+                            <span class="btn btn-sm btn-outline-primary px-3 rounded-pill">Select File</span>
+                            <input type="file" name="resume" id="resume-input" class="d-none" accept=".pdf, .png, .jpg, .jpeg" required>
+                        </div>
+                        
+                        <div id="file-info" class="mt-3 text-center d-none">
+                            <div class="alert alert-light border py-2.5 d-inline-flex align-items-center rounded-pill px-4">
+                                <i class="bi bi-file-earmark-check-fill text-primary fs-5 me-2"></i>
+                                <span id="file-name" class="fw-semibold text-dark text-truncate" style="max-width: 300px;">resume.pdf</span>
+                                <button type="button" class="btn-close ms-3" aria-label="Close" onclick="resetForm()"></button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" id="submit-btn" class="btn btn-primary-gradient py-3 rounded-pill fw-bold text-uppercase shadow-sm" disabled>
+                                Scan Resume <i class="bi bi-shield-check ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const resumeInput = document.getElementById('resume-input');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const submitBtn = document.getElementById('submit-btn');
+    const atsForm = document.getElementById('ats-form');
+    const loadingOverlay = document.getElementById('loading-overlay');
+
+    if (dropZone && resumeInput) {
+        // Handle drag and drop styling
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        // Handle drop event
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                resumeInput.files = files;
+                updateFileInfo(files[0].name);
+            }
+        });
+
+        // Handle file select change
+        resumeInput.addEventListener('change', () => {
+            if (resumeInput.files.length) {
+                updateFileInfo(resumeInput.files[0].name);
+            }
+        });
+    }
+
+    function updateFileInfo(name) {
+        fileName.textContent = name;
+        fileInfo.classList.remove('d-none');
+        submitBtn.removeAttribute('disabled');
+        dropZone.classList.add('d-none');
+    }
+
+    function resetForm() {
+        if (resumeInput) {
+            resumeInput.value = '';
+        }
+        fileInfo.classList.add('d-none');
+        submitBtn.setAttribute('disabled', 'true');
+        dropZone.classList.remove('d-none');
+    }
+
+    if (atsForm) {
+        atsForm.addEventListener('submit', () => {
+            loadingOverlay.classList.add('active');
+        });
+    }
+</script>
+{% endblock %}
