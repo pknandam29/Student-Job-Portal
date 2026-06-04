@@ -35,8 +35,23 @@ class Job(models.Model):
             from django.conf import settings
             from django.contrib.auth.models import User
             try:
-                students = User.objects.filter(is_staff=False, is_active=True).exclude(email='')
-                recipient_list = [student.email for student in students]
+                students_all = User.objects.filter(is_staff=False, is_active=True)
+                
+                # 1. Create In-App Notifications
+                notifications_to_create = [
+                    Notification(
+                        user=student,
+                        title="New Job Posted",
+                        message=f"A new job '{self.title}' at {self.company_name} is now available."
+                    )
+                    for student in students_all
+                ]
+                if notifications_to_create:
+                    Notification.objects.bulk_create(notifications_to_create)
+                
+                # 2. Send Emails
+                students_with_email = students_all.exclude(email='')
+                recipient_list = [student.email for student in students_with_email]
                 if recipient_list:
                     subject = f"New Job Alert: {self.title} at {self.company_name}"
                     message = f"Hi,\n\n" \
@@ -56,8 +71,8 @@ class Job(models.Model):
                             [email],
                             fail_silently=True,
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error notifying students: {e}")
 
     @property
     def skills_list(self):
@@ -103,5 +118,20 @@ class Job(models.Model):
 
     def __str__(self):
         return f"{self.title} at {self.company_name}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.user.username}: {self.title}"
+
 
 

@@ -171,4 +171,70 @@ class JobPortalTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'https://vitetech.com/apply')
 
+    def test_in_app_notification_system_flow(self):
+        from .models import Notification, Job
+        
+        # Ensure student1 is logged in
+        self.client.login(username='student1', password='password123')
+        
+        # 1. Initially student has 0 notifications
+        notifications_count = Notification.objects.filter(user=self.student).count()
+        self.assertEqual(notifications_count, 0)
+
+        # 2. Create a pending job
+        job = Job.objects.create(
+            title="Notification Intern",
+            company_name="Notifier Co.",
+            location="Remote",
+            salary="50000",
+            description="Testing alerts",
+            skills_required="Python",
+            application_deadline=datetime.date.today() + datetime.timedelta(days=30),
+            posted_by=self.admin,
+            status='Pending'
+        )
+        
+        # Check that 0 notifications are created while job is pending
+        self.assertEqual(Notification.objects.filter(user=self.student).count(), 0)
+
+        # 3. Admin approves the job
+        job.status = 'Approved'
+        job.save()
+
+        # Check that an in-app notification is successfully created for the student
+        self.assertEqual(Notification.objects.filter(user=self.student).count(), 1)
+        notification = Notification.objects.filter(user=self.student).first()
+        self.assertEqual(notification.title, "New Job Posted")
+        self.assertIn("Notification Intern", notification.message)
+        self.assertFalse(notification.is_read)
+
+        # 4. View notifications list page
+        response = self.client.get(reverse('view_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Notifier Co.")
+        self.assertContains(response, "Notification Intern")
+
+        # 5. Mark notification as read
+        mark_url = reverse('mark_notification_read', args=[notification.id])
+        response = self.client.get(mark_url)
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify status updated
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+
+        # 6. Mark all as read
+        # Let's create another unread notification first
+        Notification.objects.create(
+            user=self.student,
+            title="Alert 2",
+            message="Test 2",
+            is_read=False
+        )
+        
+        response = self.client.get(reverse('mark_all_notifications_read'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Notification.objects.filter(user=self.student, is_read=False).count(), 0)
+
+
 

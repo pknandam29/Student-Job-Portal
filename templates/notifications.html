@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Notifications | Student Job Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8 col-md-10">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <div>
+                    <h2 class="fw-bold m-0"><i class="bi bi-bell-fill text-primary me-2"></i> Notifications</h2>
+                    <p class="text-muted m-0 mt-1 small">Keep track of updates regarding approved job postings.</p>
+                </div>
+                {% if unread_notifications_count > 0 %}
+                    <a href="{% url 'mark_all_notifications_read' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                        <i class="bi bi-check-all me-1"></i> Mark All as Read
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if notifications %}
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                        <div class="list-group-item list-group-item-action border-0 rounded-3 mb-3 p-3 d-flex justify-content-between align-items-start shadow-xs transition-base {% if not notification.is_read %}bg-light border-start border-primary border-5{% else %}bg-white border{% endif %}">
+                            <div class="flex-grow-1">
+                                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                    <h5 class="fw-bold mb-0 {% if not notification.is_read %}text-primary{% else %}text-secondary{% endif %}" style="font-size: 1.05rem;">
+                                        {{ notification.title }}
+                                    </h5>
+                                    <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                                </div>
+                                <p class="mb-2 text-muted" style="font-size: 0.9rem;">{{ notification.message }}</p>
+                                
+                                {% if not notification.is_read %}
+                                    <a href="{% url 'mark_notification_read' notification.id %}" class="btn btn-sm btn-light py-1 px-3 rounded-pill fw-semibold border shadow-xs" style="font-size: 0.75rem;">
+                                        <i class="bi bi-check-lg text-success me-1"></i> Mark as read
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1 fw-normal" style="font-size: 0.75rem;">
+                                        <i class="bi bi-bookmark-check-fill me-1"></i> Read
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-bell-slash text-muted mb-3 d-block" style="font-size: 4rem; opacity: 0.6;"></i>
+                    <h4 class="fw-bold text-dark">All clear!</h4>
+                    <p class="text-muted mx-auto" style="max-width: 400px;">You don't have any notifications at the moment. Active job alerts will show up here.</p>
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary-gradient px-4 py-2 rounded-pill fw-bold text-white shadow-sm mt-3">
+                        <i class="bi bi-grid-fill me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

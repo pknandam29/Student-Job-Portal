@@ -375,3 +375,30 @@ def autofill_job(request):
     })
 
 
+@login_required
+def view_notifications(request):
+    from .models import Notification
+    notifications_list = Notification.objects.filter(user=request.user)
+    return render(request, 'notifications.html', {
+        'notifications': notifications_list
+    })
+
+
+@login_required
+def mark_all_notifications_read(request):
+    from .models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    messages.success(request, "All notifications marked as read.")
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+
+@login_required
+def mark_notification_read(request, notification_id):
+    from .models import Notification
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+
+
