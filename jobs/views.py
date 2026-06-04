@@ -461,26 +461,56 @@ def ats_checker(request):
                 response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
                 if response.status_code == 200:
                     res_json = response.json()
-                    text_response = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
                     
-                    if text_response.startswith("```"):
-                        lines = text_response.splitlines()
-                        if lines[0].startswith("```"):
-                            lines = lines[1:]
-                        if lines[-1].startswith("```"):
-                            lines = lines[:-1]
-                        text_response = "\n".join(lines).strip()
-                        
-                    data = json.loads(text_response)
-                    score = int(data.get('score', 75))
+                    candidates = res_json.get('candidates', [])
+                    if not candidates:
+                        warning = "The Gemini API returned an empty response. Please try again."
+                    else:
+                        candidate = candidates[0]
+                        finish_reason = candidate.get('finishReason')
+                        if finish_reason and finish_reason not in ['STOP', 'MAX_TOKENS']:
+                            warning = f"Evaluation failed (Finish Reason: {finish_reason})."
+                        else:
+                            content = candidate.get('content', {})
+                            parts = content.get('parts', [])
+                            if not parts:
+                                warning = "The Gemini API did not generate any analysis content (it may be blocked by safety filters)."
+                            else:
+                                text_response = parts[0].get('text', '').strip()
+                                
+                                if text_response.startswith("```"):
+                                    lines = text_response.splitlines()
+                                    if lines[0].startswith("```"):
+                                        lines = lines[1:]
+                                    if lines[-1].startswith("```"):
+                                        lines = lines[:-1]
+                                    text_response = "\n".join(lines).strip()
+                                
+                                try:
+                                    data = json.loads(text_response)
+                                    if 'score' in data:
+                                        score = int(data['score'])
+                                    else:
+                                        warning = "The evaluation output was missing the compatibility score field."
+                                except json.JSONDecodeError:
+                                    warning = "Failed to parse the evaluation response from Gemini (Invalid JSON format)."
+                                except ValueError:
+                                    warning = "The compatibility score returned by the API was not a valid number."
                 else:
                     print(f"[Gemini ATS Error] Status Code {response.status_code}: {response.text}")
-                    warning = f"API request failed with status {response.status_code} (Service Unavailable)."
+                    try:
+                        error_detail = response.json().get('error', {}).get('message', '')
+                    except Exception:
+                        error_detail = response.text
+                    warning = f"API request failed with status {response.status_code}: {error_detail or 'Service Unavailable'}."
             except Exception as e:
                 print(f"[Gemini ATS Exception] Error occurred: {str(e)}")
                 import traceback
                 traceback.print_exc()
-                warning = f"An error occurred during API call ({type(e).__name__})."
+                if "ReadTimeout" in type(e).__name__:
+                    warning = "The Gemini API request timed out. Please try uploading a smaller file or try again later."
+                else:
+                    warning = f"An error occurred during API call ({type(e).__name__}: {str(e)})."
         else:
             warning = "Gemini API Key is not configured. Please add GEMINI_API_KEY to your .env file."
                 
