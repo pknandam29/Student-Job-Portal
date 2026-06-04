@@ -191,3 +191,18 @@ class JobPortalTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Scan Failed")
         self.assertContains(response, "Gemini API Key is not configured")
+        
+        # 4. Uploading invalid file format shows validation error on the page
+        invalid_format_file = SimpleUploadedFile("my_resume.txt", b"some text content", content_type="text/plain")
+        response = self.client.post(ats_url, {'resume': invalid_format_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Scan Failed")
+        self.assertContains(response, "Invalid file format. Please upload a PDF or Image resume.")
+        
+        # 5. Uploading file exceeding 5MB shows size limit error on the page
+        large_file_content = b"x" * (5 * 1024 * 1024 + 100) # Slightly larger than 5MB
+        large_file = SimpleUploadedFile("huge_resume.pdf", large_file_content, content_type="application/pdf")
+        response = self.client.post(ats_url, {'resume': large_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Scan Failed")
+        self.assertContains(response, "File size exceeds the limit of 5MB.")

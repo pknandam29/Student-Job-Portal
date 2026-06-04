@@ -384,6 +384,15 @@ def ats_checker(request):
             messages.error(request, "No resume file uploaded.")
             return redirect('ats_checker')
             
+        # Check file size (max 5MB)
+        if resume_file.size > 5 * 1024 * 1024:
+            context = {
+                'error': "File size exceeds the limit of 5MB. Please upload a smaller resume.",
+                'filename': resume_file.name,
+                'success': False
+            }
+            return render(request, 'ats_checker.html', context)
+            
         # Check MIME type or file extension (PDF or Image)
         content_type = resume_file.content_type
         ext = resume_file.name.lower().split('.')[-1]
@@ -392,8 +401,12 @@ def ats_checker(request):
         valid_ext = ext in ['pdf', 'png', 'jpg', 'jpeg']
         
         if not (valid_mime or valid_ext):
-            messages.error(request, "Invalid file format. Please upload a PDF or Image resume.")
-            return redirect('ats_checker')
+            context = {
+                'error': "Invalid file format. Please upload a PDF or Image resume.",
+                'filename': resume_file.name,
+                'success': False
+            }
+            return render(request, 'ats_checker.html', context)
             
         api_key = getattr(settings, 'GEMINI_API_KEY', 'MY_GEMINI_API_KEY')
         has_api_key = api_key and api_key != 'MY_GEMINI_API_KEY'
@@ -445,7 +458,7 @@ def ats_checker(request):
                     }
                 }
                 
-                response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=15)
+                response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
                 if response.status_code == 200:
                     res_json = response.json()
                     text_response = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
