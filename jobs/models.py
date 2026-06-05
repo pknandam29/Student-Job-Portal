@@ -7,6 +7,11 @@ class Job(models.Model):
         ('Approved', 'Approved'),
         ('Rejected', 'Rejected'),
     ]
+    
+    CATEGORY_CHOICES = [
+        ('IT', 'IT'),
+        ('Non-IT', 'Non-IT'),
+    ]
 
     title = models.CharField(max_length=255)
     company_name = models.CharField(max_length=255)
@@ -20,6 +25,7 @@ class Job(models.Model):
     posted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs')
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Pending')
+    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default='IT')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

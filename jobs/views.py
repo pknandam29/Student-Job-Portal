@@ -56,6 +56,11 @@ def job_list(request):
     if skill:
         jobs = jobs.filter(skills_required__icontains=skill)
 
+    # Category filter
+    category = request.GET.get('category', '')
+    if category:
+        jobs = jobs.filter(category=category)
+
     # Aggregate popular skills from all approved jobs
     from collections import Counter
     all_skills = []
@@ -69,6 +74,7 @@ def job_list(request):
         'query': query,
         'location': location,
         'skill': skill,
+        'category': category,
         'popular_skills': popular_skills,
     }
     return render(request, 'job_list.html', context)
@@ -252,6 +258,7 @@ def autofill_job(request):
                                     "Analyze this job posting screenshot or PDF document and extract details. "
                                     "Return a JSON object with fields: "
                                     "'title', 'company_name', 'location', 'salary' (a decimal number, convert monthly salary in Rupees if possible), "
+                                    "'category' (strictly either 'IT' or 'Non-IT', where IT is for software/tech roles and Non-IT is for non-tech/sales/marketing/HR/etc roles), "
                                     "'description' (a long description of the job), "
                                     "'skills_required' (strictly comma-separated list of concrete technologies only, such as programming languages, frameworks, libraries, developer tools, and databases. Limit to a maximum of 10 skills. STRICTLY EXCLUDE soft skills, personality traits, adjectives, general fields of study, or degrees. For example, DO NOT include: 'Hardworking', 'Proactive', 'Self-motivated', 'Quick Learner', 'Result-driven', 'Decision-making', 'Team player', 'Communication', 'Leadership', 'Computer Science', 'Software Engineering', etc. Focus only on specific tools/tech like Python, React, SQL, AWS, Git, etc.), "
                                     "'contact_email' (contact email address if found in the text, otherwise set to empty string), "
@@ -295,6 +302,7 @@ def autofill_job(request):
                     'company_name': data.get('company_name', ''),
                     'location': data.get('location', ''),
                     'salary': data.get('salary', ''),
+                    'category': data.get('category', 'IT'),
                     'description': data.get('description', ''),
                     'skills_required': data.get('skills_required', ''),
                     'contact_email': data.get('contact_email', ''),
@@ -316,6 +324,7 @@ def autofill_job(request):
     company_name = "Stripe"
     location = "Remote"
     salary = "80000.00"
+    category = "IT"
     description = (
         "We are looking for a Software Engineer Intern to join our team. "
         "You will design, develop, and maintain clean web applications, write tests, and collaborate with product teams."
@@ -329,6 +338,7 @@ def autofill_job(request):
         company_name = "DjangoTech Inc."
         location = "Chicago, IL (Hybrid)"
         salary = "95000.00"
+        category = "IT"
         description = (
             "Join our backend team to build scalable Python web services using Django. "
             "You will implement REST APIs, optimize database queries, and ensure application speed and stability."
@@ -341,6 +351,7 @@ def autofill_job(request):
         company_name = "Vercel Inc."
         location = "Remote (US/Canada)"
         salary = "110000.00"
+        category = "IT"
         description = (
             "We are seeking a Frontend Engineer focused on React and Next.js. "
             "You will build responsive user interfaces, optimize component performance, and work closely with UI designers."
@@ -353,6 +364,7 @@ def autofill_job(request):
         company_name = "Figma"
         location = "San Francisco, CA"
         salary = "125000.00"
+        category = "Non-IT"
         description = (
             "We are looking for a Product Designer to design beautiful interfaces for our web applications. "
             "You will conduct user research, create wireframes, build high-fidelity interactive mockups, and run usability tests."
@@ -360,12 +372,26 @@ def autofill_job(request):
         skills_required = "Figma, UI/UX, Wireframing, User Research"
         contact_email = "design@figma.com"
         application_url = "https://figma.com/careers"
+    elif "non-it" in filename or "sales" in filename or "marketing" in filename or "hr" in filename:
+        title = "Marketing Manager"
+        company_name = "BrandPulse Co."
+        location = "Remote"
+        salary = "90000.00"
+        category = "Non-IT"
+        description = (
+            "We are looking for a Marketing Manager to lead our branding and marketing campaigns. "
+            "You will oversee advertising budgets, manage content writers, and analyze campaign performance metrics."
+        )
+        skills_required = "Marketing, SEO, Google Analytics, Content Strategy"
+        contact_email = "careers@brandpulse.com"
+        application_url = "https://brandpulse.com/apply"
         
     return JsonResponse({
         'title': title,
         'company_name': company_name,
         'location': location,
         'salary': salary,
+        'category': category,
         'description': description,
         'skills_required': skills_required,
         'contact_email': contact_email,

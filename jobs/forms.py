@@ -6,7 +6,7 @@ class JobForm(forms.ModelForm):
         model = Job
         fields = [
             'title', 'company_name', 'location', 'salary', 
-            'description', 'skills_required', 'application_deadline', 
+            'category', 'description', 'skills_required', 'application_deadline', 
             'contact_email', 'application_url'
         ]
         widgets = {
@@ -14,6 +14,7 @@ class JobForm(forms.ModelForm):
             'company_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Google, Stripe...'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Remote / New York, NY...'}),
             'salary': forms.TextInput(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Job description and requirements...'}),
             'skills_required': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Python, Django, SQL (comma-separated)'}),
             'application_deadline': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),

@@ -55,7 +55,7 @@
                 
                 <div class="row">
                     {% for field in form %}
-                        <div class="col-md-{% if field.name == 'title' or field.name == 'company_name' or field.name == 'location' or field.name == 'salary' or field.name == 'application_deadline' or field.name == 'contact_email' %}6{% else %}12{% endif %}">
+                        <div class="col-md-{% if field.name == 'title' or field.name == 'company_name' or field.name == 'location' or field.name == 'salary' or field.name == 'category' or field.name == 'application_deadline' or field.name == 'contact_email' %}6{% else %}12{% endif %}">
                             <div class="form-group-custom">
                                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                                 {{ field }}
@@ -102,6 +102,7 @@
             company_name: document.getElementById('id_company_name'),
             location: document.getElementById('id_location'),
             salary: document.getElementById('id_salary'),
+            category: document.getElementById('id_category'),
             description: document.getElementById('id_description'),
             skills_required: document.getElementById('id_skills_required'),
             contact_email: document.getElementById('id_contact_email'),

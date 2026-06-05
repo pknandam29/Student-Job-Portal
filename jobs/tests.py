@@ -26,6 +26,7 @@ class JobPortalTests(TestCase):
             'company_name': 'DjangoTech Inc.',
             'location': 'Remote',
             'salary': '12-15 LPA',
+            'category': 'IT',
             'description': 'A fantastic role for a Python enthusiast.',
             'skills_required': 'Python, Django, SQL',
             'application_deadline': (datetime.date.today() + datetime.timedelta(days=30)).strftime('%Y-%m-%d'),
@@ -132,6 +133,7 @@ class JobPortalTests(TestCase):
             'company_name': 'ViteTech Inc.',
             'location': 'New York, NY',
             'salary': '8-10 LPA',
+            'category': 'IT',
             'description': 'React developer role.',
             'skills_required': 'React, JavaScript',
             'application_deadline': (datetime.date.today() + datetime.timedelta(days=30)).strftime('%Y-%m-%d'),
@@ -233,6 +235,70 @@ class JobPortalTests(TestCase):
         response = self.client.get(reverse('mark_all_notifications_read'))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Notification.objects.filter(user=self.student, is_read=False).count(), 0)
+
+    def test_job_category_filtering_and_autofill(self):
+        # 1. Direct database creation
+        it_job = Job.objects.create(
+            title="Software Developer",
+            company_name="TechCorp",
+            location="Remote",
+            salary="100000",
+            description="Coding in Python",
+            skills_required="Python",
+            application_deadline=datetime.date.today() + datetime.timedelta(days=10),
+            posted_by=self.admin,
+            status='Approved',
+            category='IT'
+        )
+        non_it_job = Job.objects.create(
+            title="HR Manager",
+            company_name="PeopleCo",
+            location="Chicago, IL",
+            salary="80000",
+            description="Recruiting talents",
+            skills_required="Recruitment",
+            application_deadline=datetime.date.today() + datetime.timedelta(days=10),
+            posted_by=self.admin,
+            status='Approved',
+            category='Non-IT'
+        )
+
+        # 2. Test filtering on job_list view
+        self.client.login(username='student1', password='password123')
+        list_url = reverse('job_list')
+
+        # Filter: IT
+        response_it = self.client.get(list_url, {'category': 'IT'})
+        self.assertEqual(response_it.status_code, 200)
+        self.assertContains(response_it, "Software Developer")
+        self.assertNotContains(response_it, "HR Manager")
+
+        # Filter: Non-IT
+        response_non_it = self.client.get(list_url, {'category': 'Non-IT'})
+        self.assertEqual(response_non_it.status_code, 200)
+        self.assertContains(response_non_it, "HR Manager")
+        self.assertNotContains(response_non_it, "Software Developer")
+
+        # 3. Test simulated autofill extraction
+        autofill_url = reverse('autofill_job')
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Case A: design/figma file -> Non-IT
+        design_file = SimpleUploadedFile("my_ux_design.png", b"fake_png_content", content_type="image/png")
+        response = self.client.post(autofill_url, {'image': design_file})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get('category'), 'Non-IT')
+        self.assertEqual(data.get('company_name'), 'Figma')
+
+        # Case B: python file -> IT
+        python_file = SimpleUploadedFile("python_job.png", b"fake_png_content", content_type="image/png")
+        response = self.client.post(autofill_url, {'image': python_file})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get('category'), 'IT')
+        self.assertEqual(data.get('company_name'), 'DjangoTech Inc.')
+
 
 
 
