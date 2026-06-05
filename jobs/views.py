@@ -257,7 +257,8 @@ def autofill_job(request):
                                 "text": (
                                     "Analyze this job posting screenshot or PDF document and extract details. "
                                     "Return a JSON object with fields: "
-                                    "'title', 'company_name', 'location', 'salary' (a decimal number, convert monthly salary in Rupees if possible), "
+                                    "'title', 'company_name', 'location', "
+                                    "'salary' (extract the exact annual salary range as specified in the text/image, e.g. '12-22 LPA' or '8-10 LPA', or a single value/range. Do NOT convert it to a single monthly decimal/number unless only a single monthly number is present), "
                                     "'category' (strictly either 'IT' or 'Non-IT', where IT is for software/tech roles and Non-IT is for non-tech/sales/marketing/HR/etc roles), "
                                     "'description' (a long description of the job), "
                                     "'skills_required' (strictly comma-separated list of concrete technologies only, such as programming languages, frameworks, libraries, developer tools, and databases. Limit to a maximum of 10 skills. STRICTLY EXCLUDE soft skills, personality traits, adjectives, general fields of study, or degrees. For example, DO NOT include: 'Hardworking', 'Proactive', 'Self-motivated', 'Quick Learner', 'Result-driven', 'Decision-making', 'Team player', 'Communication', 'Leadership', 'Computer Science', 'Software Engineering', etc. Focus only on specific tools/tech like Python, React, SQL, AWS, Git, etc.), "
@@ -323,7 +324,7 @@ def autofill_job(request):
     title = "Software Engineer Intern"
     company_name = "Stripe"
     location = "Remote"
-    salary = "80000.00"
+    salary = "8-12 LPA"
     category = "IT"
     description = (
         "We are looking for a Software Engineer Intern to join our team. "
@@ -337,7 +338,7 @@ def autofill_job(request):
         title = "Python/Django Developer"
         company_name = "DjangoTech Inc."
         location = "Chicago, IL (Hybrid)"
-        salary = "95000.00"
+        salary = "12-15 LPA"
         category = "IT"
         description = (
             "Join our backend team to build scalable Python web services using Django. "
@@ -350,7 +351,7 @@ def autofill_job(request):
         title = "Frontend Developer (React)"
         company_name = "Vercel Inc."
         location = "Remote (US/Canada)"
-        salary = "110000.00"
+        salary = "10-14 LPA"
         category = "IT"
         description = (
             "We are seeking a Frontend Engineer focused on React and Next.js. "
@@ -363,7 +364,7 @@ def autofill_job(request):
         title = "Product Designer"
         company_name = "Figma"
         location = "San Francisco, CA"
-        salary = "125000.00"
+        salary = "8-11 LPA"
         category = "Non-IT"
         description = (
             "We are looking for a Product Designer to design beautiful interfaces for our web applications. "
@@ -376,7 +377,7 @@ def autofill_job(request):
         title = "Marketing Manager"
         company_name = "BrandPulse Co."
         location = "Remote"
-        salary = "90000.00"
+        salary = "6-9 LPA"
         category = "Non-IT"
         description = (
             "We are looking for a Marketing Manager to lead our branding and marketing campaigns. "
